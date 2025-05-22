@@ -1,6 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { GiftedChat, Bubble, Send, Time, IMessage } from 'react-native-gifted-chat';
+import { GiftedChat, Bubble, Send, Time, type IMessage } from '../../lib/react-native-gifted-chat/src/index';
 import { useAuth } from '@/hooks/useAuth';
 import { useMessages } from '@/hooks/useMessages';
 import { COLORS } from '@/lib/constants';
@@ -34,13 +34,13 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
         name: (msg as any).users?.display_name || 'User',
       },
     }));
-    
+
     setChatMessages(formattedMessages);
   }, [messages]);
 
   const onSend = useCallback(async (messages: IMessage[] = []) => {
     if (!user) return;
-    
+
     const { text } = messages[0];
     await sendMessage(eventId, user.id, text, parentId);
   }, [user, eventId, parentId]);
@@ -105,7 +105,7 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
           </TouchableOpacity>
         </View>
       )}
-      
+
       <GiftedChat
         messages={chatMessages}
         onSend={onSend}
