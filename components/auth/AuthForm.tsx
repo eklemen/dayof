@@ -5,41 +5,48 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { COLORS, SPACING } from '@/lib/constants';
 import { useAuth } from '@/hooks/useAuth';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 
 interface AuthFormProps {
   type: 'login' | 'register';
 }
 
+type FormValues = {
+  email: string;
+  displayName: string;
+  companyName: string;
+  role: 'planner' | 'vendor';
+};
+
 export function AuthForm({ type }: AuthFormProps) {
   const { signInWithEmail, createUserProfile } = useAuth();
-  const [email, setEmail] = useState('');
-  const [displayName, setDisplayName] = useState('');
-  const [companyName, setCompanyName] = useState('');
-  const [role, setRole] = useState<'planner' | 'vendor'>('planner');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  const handleAuth = async () => {
-    if (!email.trim()) {
-      setError('Email is required');
-      return;
-    }
+  const { control, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormValues>({
+    defaultValues: {
+      email: '',
+      displayName: '',
+      companyName: '',
+      role: 'planner'
+    },
+    mode: 'onSubmit'
+  });
 
-    if (type === 'register') {
-      if (!displayName.trim()) {
-        setError('Name is required');
-        return;
-      }
-    }
+  // Watch the email field for displaying in success message
+  const email = watch('email');
+  // Watch the role field for styling the role selector
+  const role = watch('role');
 
+  const onSubmit: SubmitHandler<FormValues> = async (data) => {
     setLoading(true);
     setError(null);
 
     if (type === 'login') {
-      const { success, error } = await signInWithEmail(email);
+      const { success, error } = await signInWithEmail(data.email);
       setLoading(false);
-      
+
       if (error) {
         setError(error);
       } else {
@@ -47,8 +54,8 @@ export function AuthForm({ type }: AuthFormProps) {
       }
     } else {
       // Register flow - first create user with auth, then profile
-      const { success, error } = await signInWithEmail(email);
-      
+      const { success, error } = await signInWithEmail(data.email);
+
       if (error) {
         setLoading(false);
         setError(error);
@@ -77,9 +84,9 @@ export function AuthForm({ type }: AuthFormProps) {
         <Text style={styles.description}>
           We've sent a magic link to {email}. Click the link to sign in.
         </Text>
-        <Button 
-          title="Back to Login" 
-          onPress={() => router.replace('/login')} 
+        <Button
+          title="Back to Login"
+          onPress={() => router.replace('/login')}
           variant="outline"
           style={styles.button}
         />
@@ -90,7 +97,7 @@ export function AuthForm({ type }: AuthFormProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>{type === 'login' ? 'Sign In' : 'Create Account'}</Text>
-      
+
       <View style={styles.form}>
         {error && (
           <View style={styles.errorContainer}>
@@ -100,19 +107,37 @@ export function AuthForm({ type }: AuthFormProps) {
 
         {type === 'register' && (
           <>
-            <Input
-              label="Your Name"
-              placeholder="Jane Smith"
-              value={displayName}
-              onChangeText={setDisplayName}
-              autoCapitalize="words"
+            <Controller
+              control={control}
+              name="displayName"
+              rules={{
+                required: 'Name is required'
+              }}
+              render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+                <Input
+                  label="Your Name"
+                  placeholder="Jane Smith"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                  autoCapitalize="words"
+                  error={error?.message}
+                />
+              )}
             />
-            
-            <Input
-              label="Company Name (Optional)"
-              placeholder="Your Business"
-              value={companyName}
-              onChangeText={setCompanyName}
+
+            <Controller
+              control={control}
+              name="companyName"
+              render={({ field: { onChange, onBlur, value } }) => (
+                <Input
+                  label="Company Name (Optional)"
+                  placeholder="Your Business"
+                  value={value}
+                  onChangeText={onChange}
+                  onBlur={onBlur}
+                />
+              )}
             />
 
             <Text style={styles.label}>I am a:</Text>
@@ -122,7 +147,7 @@ export function AuthForm({ type }: AuthFormProps) {
                   styles.roleButton,
                   role === 'planner' && styles.roleButtonActive,
                 ]}
-                onPress={() => setRole('planner')}
+                onPress={() => setValue('role', 'planner')}
               >
                 <Text style={[
                   styles.roleText,
@@ -131,13 +156,13 @@ export function AuthForm({ type }: AuthFormProps) {
                   Event Planner
                 </Text>
               </TouchableOpacity>
-              
+
               <TouchableOpacity
                 style={[
                   styles.roleButton,
                   role === 'vendor' && styles.roleButtonActive,
                 ]}
-                onPress={() => setRole('vendor')}
+                onPress={() => setValue('role', 'vendor')}
               >
                 <Text style={[
                   styles.roleText,
@@ -150,26 +175,41 @@ export function AuthForm({ type }: AuthFormProps) {
           </>
         )}
 
-        <Input
-          label="Email"
-          placeholder="your.email@example.com"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
+        <Controller
+          control={control}
+          name="email"
+          rules={{
+            required: 'Email is required',
+            pattern: {
+              value: /\S+@\S+\.\S+/,
+              message: 'Please enter a valid email'
+            }
+          }}
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <Input
+              label="Email"
+              placeholder="your.email@example.com"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              error={error?.message}
+            />
+          )}
         />
 
         <Button
           title={type === 'login' ? 'Sign In' : 'Create Account'}
-          onPress={handleAuth}
+          onPress={handleSubmit(onSubmit)}
           loading={loading}
           style={styles.button}
         />
 
         <TouchableOpacity onPress={toggleAuthMode} style={styles.toggleLink}>
           <Text style={styles.toggleText}>
-            {type === 'login' 
-              ? "Don't have an account? Sign up" 
+            {type === 'login'
+              ? "Don't have an account? Sign up"
               : "Already have an account? Sign in"}
           </Text>
         </TouchableOpacity>

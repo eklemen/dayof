@@ -116,7 +116,7 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
         renderSend={renderSend}
         renderTime={renderTime}
         alwaysShowSend
-        scrollToBottom
+        isScrollToBottomEnabled
         placeholder="Type a message..."
         renderAvatar={null}
         renderUsernameOnMessage
