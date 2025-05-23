@@ -5,7 +5,7 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { COLORS } from '@/lib/constants';
 import { View } from 'react-native';
-import './global.css'
+import '../styles/global.css'
 
 export default function RootLayout() {
   // Keep the framework ready hook
