@@ -5,11 +5,12 @@ import { useFrameworkReady } from '@/hooks/useFrameworkReady';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { COLORS } from '@/lib/constants';
 import { View } from 'react-native';
+import './global.css'
 
 export default function RootLayout() {
   // Keep the framework ready hook
   useFrameworkReady();
-  
+
   const [isReady, setIsReady] = useState(false);
 
   const [fontsLoaded, fontError] = useFonts({
@@ -37,8 +38,8 @@ export default function RootLayout() {
 
   return (
     <>
-      <Stack 
-        screenOptions={{ 
+      <Stack
+        screenOptions={{
           headerShown: false,
           contentStyle: { backgroundColor: COLORS.gray[50] },
         }}
