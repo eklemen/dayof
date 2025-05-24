@@ -3,6 +3,8 @@ import { supabase } from '@/lib/supabase';
 import { Session } from '@supabase/supabase-js';
 import { router } from 'expo-router';
 import { Database } from '@/types/supabase';
+import * as AuthSession from 'expo-auth-session'
+import * as WebBrowser from 'expo-web-browser'
 
 export type User = Database['public']['Tables']['users']['Row'];
 
@@ -14,7 +16,7 @@ export function useAuth() {
 
   useEffect(() => {
     isMounted.current = true;
-    
+
     const initializeAuth = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
@@ -42,6 +44,7 @@ export function useAuth() {
           setSession(session);
           if (session?.user) {
             await fetchUser(session.user.id);
+            router.replace('/(tabs)');
           } else {
             setUser(null);
           }
@@ -58,7 +61,7 @@ export function useAuth() {
 
   const fetchUser = async (userId: string) => {
     if (!isMounted.current) return;
-    
+
     try {
       const { data, error } = await supabase
         .from('users')
@@ -101,6 +104,48 @@ export function useAuth() {
       }
     }
   };
+
+  WebBrowser.maybeCompleteAuthSession()
+
+  const signInWithFacebook = async () => {
+    try {
+      const { data, error } = await supabase.auth.signInWithOAuth({
+        provider: 'facebook',
+        options: {
+          redirectTo: AuthSession.makeRedirectUri({
+            scheme: 'dayof',
+            path: 'auth/callback'
+          }),
+        },
+      })
+
+      if (error) throw error
+
+      // Open the OAuth URL in browser
+      const result = await WebBrowser.openAuthSessionAsync(
+        data.url,
+        AuthSession.makeRedirectUri({
+          scheme: 'dayof',
+          path: 'auth/callback'
+        })
+      )
+
+      if (result.type === 'success') {
+        // Handle the callback URL
+        const { url } = result
+        // Extract tokens from URL and complete auth if needed
+        console.log('Auth success:', url)
+        console.log('result---------->', result);
+        setUser(result);
+      }
+
+    } catch (error) {
+      console.error('Facebook login error:', error)
+      throw error
+    } finally {
+      setLoading(false);
+    }
+  }
 
   const signOut = async () => {
     try {
@@ -148,6 +193,7 @@ export function useAuth() {
     user,
     loading,
     signInWithEmail,
+    signInWithFacebook,
     signOut,
     createUserProfile,
     refreshUser: () => session?.user?.id ? fetchUser(session.user.id) : null,

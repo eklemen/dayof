@@ -44,12 +44,13 @@ export default function RootLayout() {
           contentStyle: { backgroundColor: COLORS.gray[50] },
         }}
       >
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen name="register" options={{ headerShown: false }} />
+        <Stack.Screen name="enrollment-info" options={{ headerShown: false }} />
         <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="events/create" options={{ headerShown: false }} />
         <Stack.Screen name="events/join" options={{ headerShown: false }} />
+        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
         <Stack.Screen name="+not-found" />
       </Stack>
       <StatusBar style="auto" />

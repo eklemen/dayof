@@ -1,52 +1,87 @@
-import { StyleSheet, View, Image } from 'react-native';
+import { useState } from 'react';
+import { View, Image, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { COLORS } from '@/lib/constants';
-import { AuthForm } from '@/components/auth/AuthForm';
+import { COLORS, SPACING } from '@/lib/constants';
+import { Button } from '@/components/ui/Button';
+import { router } from 'expo-router';
+import { useAuth } from '@/hooks/useAuth';
+import { Feather } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
+  const { signInWithFacebook } = useAuth();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleFacebookLogin = async () => {
+    setLoading(true);
+    setError(null);
+
+    const { success, error, data } = await signInWithFacebook();
+
+    console.log('data---------->', data);
+    console.log('error---------->', error);
+    setLoading(false);
+    if (error) {
+      setError(error);
+    } else {
+      router.replace('/(tabs)');
+    }
+  };
+
+  const navigateToLogin = () => {
+    router.replace('/login');
+  };
+
+  const navigateToEnrollmentInfo = () => {
+    router.push('/enrollment-info');
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.logoContainer}>
-        <Image 
-          source={{ uri: 'https://images.pexels.com/photos/1047940/pexels-photo-1047940.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260' }} 
-          style={styles.backgroundImage} 
+    <SafeAreaView className="flex-1 bg-white">
+      <View className="h-[200px] justify-center items-center relative">
+        <Image
+          source={{ uri: 'https://images.pexels.com/photos/1047940/pexels-photo-1047940.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260' }}
+          className="absolute w-full h-full"
         />
-        <View style={styles.overlay} />
+        <View className="absolute w-full h-full bg-black/40" />
       </View>
-      <View style={styles.formContainer}>
-        <AuthForm type="register" />
+      <View className="flex-1 bg-white rounded-t-3xl -mt-6 p-4">
+        <Text className="text-2xl font-bold text-gray-800 mb-4">Create Account</Text>
+
+        {error && (
+          <View className="bg-error-500/[0.15] p-4 rounded-lg mb-4">
+            <Text className="text-error-600 text-sm">{error}</Text>
+          </View>
+        )}
+
+        <Button
+          title="Continue with Facebook"
+          onPress={handleFacebookLogin}
+          loading={loading}
+          style={{ backgroundColor: '#1877F2', marginTop: SPACING.m }}
+          textStyle={{ color: 'white' }}
+          icon={<Feather name="facebook" size={20} color="white" style={{ marginRight: SPACING.s }} />}
+        />
+
+        <View className="flex-row items-center my-4">
+          <View className="flex-1 h-[1px] bg-gray-300" />
+          <Text className="mx-4 text-gray-500 font-medium">OR</Text>
+          <View className="flex-1 h-[1px] bg-gray-300" />
+        </View>
+
+        <Button
+          title="Sign Up with Email"
+          onPress={navigateToEnrollmentInfo}
+          variant="outline"
+          style={{ marginTop: SPACING.s }}
+        />
+
+        <TouchableOpacity onPress={navigateToLogin} className="mt-4 items-center">
+          <Text className="text-primary-700 text-base">
+            Already have an account? Sign in
+          </Text>
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: 'white',
-  },
-  logoContainer: {
-    height: 200,
-    justifyContent: 'center',
-    alignItems: 'center',
-    position: 'relative',
-  },
-  backgroundImage: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-  },
-  overlay: {
-    position: 'absolute',
-    width: '100%',
-    height: '100%',
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  formContainer: {
-    flex: 1,
-    backgroundColor: 'white',
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
-    marginTop: -24,
-  },
-});

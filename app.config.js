@@ -1,11 +1,11 @@
 export default {
   expo: {
-    name: 'bolt-expo-nativewind',
-    slug: 'bolt-expo-nativewind',
+    name: 'Dayof',
+    slug: 'dayof',
     version: '1.0.0',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
-    scheme: 'myapp',
+    scheme: 'dayof',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {

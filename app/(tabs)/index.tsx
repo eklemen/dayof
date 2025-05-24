@@ -12,11 +12,13 @@ import { useEvents } from '@/hooks/useEvents';
 export default function EventsScreen() {
   const { user, loading: authLoading } = useAuth();
   const { userEvents, loading: eventsLoading, refreshEvents } = useEvents(user?.id);
-  
+
   useEffect(() => {
-    if (!user && !authLoading) {
-      router.replace('/login');
-    }
+    console.log('user---------->', user);
+    console.log('authLoading---------->', authLoading);
+    // if (!user && !authLoading) {
+    //   router.replace('/login');
+    // }
   }, [user, authLoading]);
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function EventsScreen() {
 
       <ScrollView style={styles.scrollView}>
         <Text style={styles.sectionTitle}>Your Events</Text>
-        
+
         {eventsLoading ? (
           <Text style={styles.loadingText}>Loading events...</Text>
         ) : userEvents.length === 0 ? (
@@ -77,10 +79,10 @@ export default function EventsScreen() {
         ) : (
           <View style={styles.eventsContainer}>
             {userEvents.map(event => (
-              <EventCard 
-                key={event.id} 
-                event={event} 
-                isOwner={event.owner_id === user.id} 
+              <EventCard
+                key={event.id}
+                event={event}
+                isOwner={event.owner_id === user.id}
               />
             ))}
           </View>
