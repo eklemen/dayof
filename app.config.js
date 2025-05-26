@@ -9,12 +9,37 @@ export default {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
-      supportsTablet: true
+      supportsTablet: true,
+      bundleIdentifier: 'com.anonymous.dayof',
+      infoPlist: {
+        // Add URL scheme handling
+        CFBundleURLTypes: [
+          {
+            CFBundleURLName: 'dayof',
+            CFBundleURLSchemes: ['dayof']
+          }
+        ]
+      }
     },
     web: {
       bundler: 'metro',
       output: 'single',
       favicon: './assets/images/favicon.png'
+    },
+    android: {
+      package: 'com.anonymous.dayof',
+      intentFilters: [
+        {
+          action: 'VIEW',
+          autoVerify: true,
+          data: [
+            {
+              scheme: 'dayof',
+            },
+          ],
+          category: ['BROWSABLE', 'DEFAULT'],
+        },
+      ],
     },
     plugins: [
       'expo-router',

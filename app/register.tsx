@@ -13,17 +13,21 @@ export default function RegisterScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const handleFacebookLogin = async () => {
+    console.log('🔵 handleFacebookLogin called');
     setLoading(true);
     setError(null);
 
-    const { success, error, data } = await signInWithFacebook();
+    console.log('🔵 About to call signInWithFacebook');
+    const { success, error } = await signInWithFacebook();
 
-    console.log('data---------->', data);
-    console.log('error---------->', error);
+    console.log('🔵 signInWithFacebook returned:', { success, error });
     setLoading(false);
+
     if (error) {
+      console.log('🔴 Setting error:', error);
       setError(error);
     } else {
+      console.log('🟢 Success, navigating to tabs');
       router.replace('/(tabs)');
     }
   };

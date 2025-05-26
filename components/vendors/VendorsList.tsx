@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity } from 'react-native';
-import * as Clipboard from 'expo-clipboard';
+// import * as Clipboard from 'expo-clipboard';
 import { useEvents } from '@/hooks/useEvents';
 import { COLORS, SPACING } from '@/lib/constants';
 import { formatInstagramHandles } from '@/lib/utils';
@@ -25,11 +25,11 @@ export function VendorsList({ eventId }: VendorsListProps) {
   const fetchMembers = async () => {
     setLoading(true);
     const { success, data } = await getEventMembers(eventId);
-    
+
     if (success && data) {
       setMembers(data);
     }
-    
+
     setLoading(false);
   };
 
@@ -37,12 +37,12 @@ export function VendorsList({ eventId }: VendorsListProps) {
     const handles = members
       .filter(m => m.users.instagram_handle)
       .map(m => m.users.instagram_handle);
-      
+
     const formattedHandles = formatInstagramHandles(handles);
-    
-    await Clipboard.setStringAsync(formattedHandles);
+
+    // await Clipboard.setStringAsync(formattedHandles);
     setCopied(true);
-    
+
     setTimeout(() => {
       setCopied(false);
     }, 3000);
@@ -53,11 +53,11 @@ export function VendorsList({ eventId }: VendorsListProps) {
       <Card variant="outlined" style={styles.vendorCard}>
         <View style={styles.vendorInfo}>
           <Text style={styles.vendorName}>{item.users.display_name}</Text>
-          
+
           {item.users.company_name && (
             <Text style={styles.companyName}>{item.users.company_name}</Text>
           )}
-          
+
           {item.categories && item.categories.length > 0 && (
             <View style={styles.categoriesContainer}>
               {item.categories.map((category: string, index: number) => (
@@ -68,7 +68,7 @@ export function VendorsList({ eventId }: VendorsListProps) {
             </View>
           )}
         </View>
-        
+
         {item.users.instagram_handle && (
           <View style={styles.instagramContainer}>
             <Text style={styles.instagramHandle}>
@@ -84,7 +84,7 @@ export function VendorsList({ eventId }: VendorsListProps) {
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.title}>Vendors</Text>
-        
+
         <Button
           title={copied ? 'Copied!' : 'Copy All Instagram Handles'}
           onPress={copyInstagramHandles}
@@ -94,7 +94,7 @@ export function VendorsList({ eventId }: VendorsListProps) {
           size="small"
         />
       </View>
-      
+
       {loading ? (
         <Text style={styles.loadingText}>Loading vendors...</Text>
       ) : members.length === 0 ? (

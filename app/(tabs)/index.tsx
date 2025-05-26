@@ -14,11 +14,11 @@ export default function EventsScreen() {
   const { userEvents, loading: eventsLoading, refreshEvents } = useEvents(user?.id);
 
   useEffect(() => {
-    console.log('user---------->', user);
-    console.log('authLoading---------->', authLoading);
-    // if (!user && !authLoading) {
-    //   router.replace('/login');
-    // }
+    // console.log('user---------->', user);
+    // console.log('authLoading---------->', authLoading);
+    if (!user && !authLoading) {
+      router.replace('/login');
+    }
   }, [user, authLoading]);
 
   useEffect(() => {
