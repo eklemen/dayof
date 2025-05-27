@@ -6,6 +6,7 @@ import {
   makeRedirectUri,
 } from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
+import { finishFacebookLogin } from '@/utils/supabaseTokenExtract';
 
 WebBrowser.maybeCompleteAuthSession();               // ← 1-time call
 
@@ -81,26 +82,25 @@ export function useAuth() {
     try {
       const redirectTo = makeRedirectUri({ scheme: 'dayof', path: 'auth/callback' })
 
-      console.log('✅ redirectTo →', redirectTo);
-
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
         options: { redirectTo },
       });
-      console.log('data signInWithOAuth---------->', data);
-      console.log('error signInWithOAuth---------->', error);
 
       if (error) {
-        console.error('❌ Supabase OAuth error:', error);
         return { success: false, error: error.message };
       }
 
       const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
       console.log('📱 WebBrowser result:', result);
 
-      return result.type === 'success'
-        ? { success: true }
-        : { success: false, error: result.type };
+      if (result.type === 'success' && result.url) {
+        const user = await finishFacebookLogin(result.url);
+        if (user) {
+          console.log('✅ signed-in email →', user?.email);
+        }
+        return { success: true };
+      }
     } catch (err) {
       console.log('err-------->', err);
       return { success: false, error: err?.message };

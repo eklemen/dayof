@@ -13,18 +13,14 @@ export default function RegisterScreen() {
   const { signInWithFacebook } = useAuth();
 
   const handleFacebookLogin = async () => {
-    console.log('🔵 handleFacebookLogin called');
     setLoading(true);
     setError(null);
 
-    console.log('🔵 About to call signInWithFacebook');
     try {
       const { success, error } = await signInWithFacebook();
-      console.log('🔵 signInWithFacebook returned:', { success, error });
       setLoading(false);
 
       if (error) {
-        console.log('🔴 Setting error:', error);
         setError(error);
       } else {
         console.log('🟢 Success, navigating to tabs');

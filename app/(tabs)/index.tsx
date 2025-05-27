@@ -16,8 +16,8 @@ export default function EventsScreen() {
   useEffect(() => {
     // console.log('user---------->', user);
     // console.log('authLoading---------->', authLoading);
-    if (!user && !authLoading) {
-      router.replace('/login');
+    if (!user) {
+      // router.replace('/login');
     }
   }, [user, authLoading]);
 
