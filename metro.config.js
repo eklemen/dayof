@@ -19,6 +19,7 @@ config.resolver.extraNodeModules = {
   net:   require.resolve(path.join(__dirname, 'shims/empty.js')),
   tls:   require.resolve(path.join(__dirname, 'shims/empty.js')),
   zlib:  require.resolve(path.join(__dirname, 'shims/empty.js')),
+  url:  require.resolve(path.join(__dirname, 'shims/empty.js')),
 };
 
 module.exports = withNativeWind(config, { input: './styles/global.css' });

@@ -3,23 +3,21 @@ export default {
     name: 'Dayof',
     slug: 'dayof',
     version: '1.0.0',
+    owner: 'ejklemen',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
     scheme: 'dayof',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
-      supportsTablet: true,
       bundleIdentifier: 'com.anonymous.dayof',
       infoPlist: {
-        // Add URL scheme handling
         CFBundleURLTypes: [
           {
-            CFBundleURLName: 'dayof',
-            CFBundleURLSchemes: ['dayof']
-          }
-        ]
-      }
+            CFBundleURLSchemes: ['dayof'],
+          },
+        ],
+      },
     },
     web: {
       bundler: 'metro',

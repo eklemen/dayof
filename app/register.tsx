@@ -8,9 +8,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { Feather } from '@expo/vector-icons';
 
 export default function RegisterScreen() {
-  const { signInWithFacebook } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { signInWithFacebook } = useAuth();
 
   const handleFacebookLogin = async () => {
     console.log('🔵 handleFacebookLogin called');
@@ -18,17 +18,21 @@ export default function RegisterScreen() {
     setError(null);
 
     console.log('🔵 About to call signInWithFacebook');
-    const { success, error } = await signInWithFacebook();
+    try {
+      const { success, error } = await signInWithFacebook();
+      console.log('🔵 signInWithFacebook returned:', { success, error });
+      setLoading(false);
 
-    console.log('🔵 signInWithFacebook returned:', { success, error });
-    setLoading(false);
-
-    if (error) {
-      console.log('🔴 Setting error:', error);
-      setError(error);
-    } else {
-      console.log('🟢 Success, navigating to tabs');
-      router.replace('/(tabs)');
+      if (error) {
+        console.log('🔴 Setting error:', error);
+        setError(error);
+      } else {
+        console.log('🟢 Success, navigating to tabs');
+        router.replace('/(tabs)');
+      }
+    } catch (err) {
+      console.log('err-------->', err);
+      debugger
     }
   };
 

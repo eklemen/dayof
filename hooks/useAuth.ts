@@ -2,78 +2,67 @@ import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Database } from '@/types/supabase';
 import { router } from 'expo-router';
-import { makeRedirectUri } from 'expo-auth-session';
+import {
+  makeRedirectUri,
+} from 'expo-auth-session';
 import * as WebBrowser from 'expo-web-browser';
-import * as Linking from 'expo-linking';
 
-WebBrowser.maybeCompleteAuthSession();
+WebBrowser.maybeCompleteAuthSession();               // ← 1-time call
 
 export type User = Database['public']['Tables']['users']['Row'];
 
 export function useAuth() {
-  const [session, setSession] = useState<null | Awaited<
-    ReturnType<typeof supabase.auth.getSession>
-  >['data']['session']>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const mounted = useRef(true);
+  /* state */
+  const [session, setSession] = useState<
+    Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']
+  >(null);
+  const [user, setUser]     = useState<User | null>(null);
+  const [loading, setLoad]  = useState(true);
+  const mounted             = useRef(true);
 
+  /* bootstrap */
   useEffect(() => {
     mounted.current = true;
 
-    // Get initial session
+    /* initial session */
     supabase.auth.getSession().then(({ data }) => {
       if (!mounted.current) return;
       setSession(data.session);
-      setLoading(false);
-      if (data.session?.user) fetchUser(data.session.user.id);
+      setLoad(false);
+      data.session?.user && fetchUser(data.session.user.id);
     });
 
-    // Listen for auth changes
+    /* auth change listener */
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_evt, s) => {
+      async (_event, s) => {
         if (!mounted.current) return;
         setSession(s);
         if (s?.user) {
           await fetchUser(s.user.id);
           router.replace('/(tabs)');
-        } else {
-          setUser(null);
-        }
+        } else setUser(null);
       }
     );
-
-    // Handle deep links - this is crucial for OAuth callbacks
-    const handleDeepLink = (url: string) => {
-      console.log('Deep link received:', url);
-      // Supabase will automatically handle the session via onAuthStateChange
-      // when the deep link contains the auth tokens
-    };
-
-    // Listen for deep links
-    const subscription2 = Linking.addEventListener('url', ({ url }) => {
-      handleDeepLink(url);
-    });
 
     return () => {
       mounted.current = false;
       subscription.unsubscribe();
-      subscription2?.remove();
     };
   }, []);
 
+  /* helpers */
   async function fetchUser(id: string) {
-    if (!mounted.current) return;
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('users')
       .select('*')
       .eq('id', id)
       .single();
-    if (!error && data) setUser(data);
+    data && setUser(data);
   }
 
+  /* email magic-link (unchanged) */
   async function signInWithEmail(email: string) {
-    setLoading(true);
+    setLoad(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
@@ -83,69 +72,46 @@ export function useAuth() {
         }),
       },
     });
-    setLoading(false);
+    setLoad(false);
     return { success: !error, error };
   }
 
+  /* Facebook OAuth */
   async function signInWithFacebook() {
     try {
-      // Create the redirect URI that matches your app scheme
-      const redirectTo = makeRedirectUri({
-        scheme: 'dayof',
-        path: 'auth/callback',
-      });
+      const redirectTo = makeRedirectUri({ scheme: 'dayof', path: 'auth/callback' })
 
-      console.log('=== FACEBOOK AUTH (DEEP LINK VERSION) ===');
-      console.log('Redirect URI:', redirectTo);
+      console.log('✅ redirectTo →', redirectTo);
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'facebook',
-        options: {
-          redirectTo,
-        },
+        options: { redirectTo },
       });
+      console.log('data signInWithOAuth---------->', data);
+      console.log('error signInWithOAuth---------->', error);
 
       if (error) {
-        console.error('Supabase OAuth error:', error);
+        console.error('❌ Supabase OAuth error:', error);
         return { success: false, error: error.message };
       }
 
-      console.log('Opening OAuth URL:', data.url);
+      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      console.log('📱 WebBrowser result:', result);
 
-      // Open the browser for authentication
-      const res = await WebBrowser.openAuthSessionAsync(
-        data.url,
-        redirectTo
-      );
-
-      console.log('WebBrowser result:', res);
-
-      if (res.type === 'success') {
-        console.log('✅ OAuth flow completed successfully');
-        // The onAuthStateChange listener will handle the rest
-        return { success: true, error: null };
-      }
-
-      if (res.type === 'cancel') {
-        return { success: false, error: 'User cancelled authentication' };
-      }
-
-      return { success: false, error: 'Authentication failed' };
-
-    } catch (error) {
-      console.error('Facebook auth error:', error);
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Authentication failed'
-      };
+      return result.type === 'success'
+        ? { success: true }
+        : { success: false, error: result.type };
+    } catch (err) {
+      console.log('err-------->', err);
+      return { success: false, error: err?.message };
     }
   }
 
   async function signOut() {
-    setLoading(true);
+    setLoad(true);
     await supabase.auth.signOut();
     router.replace('/login');
-    setLoading(false);
+    setLoad(false);
   }
 
   async function createUserProfile(partial: Partial<User>) {
@@ -155,7 +121,7 @@ export function useAuth() {
       .upsert({ id: session.user.id, email: session.user.email, ...partial })
       .select()
       .single();
-    if (!error && data) setUser(data);
+    data && setUser(data);
     return { success: !error, data, error };
   }
 
