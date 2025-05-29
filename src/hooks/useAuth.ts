@@ -37,6 +37,7 @@ export function useAuth() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (_event, s) => {
         if (!mounted.current) return;
+        console.log('session in onAuthStateChange---------->', s);
         setSession(s);
         if (s?.user) {
           await fetchUser(s.user.id);
@@ -90,20 +91,25 @@ export function useAuth() {
         return { success: false, error: error.message };
       }
 
-      const result = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+      const result = await WebBrowser
+        .openAuthSessionAsync(
+          data.url,
+          redirectTo,
+          { preferEphemeralSession: true }
+        );
 
       if (result.type === 'success' && result.url) {
         const user = await finishFacebookLogin(result.url);
+        console.log('user after finishFacebookLogin---------->', user);
         if (user) {
           console.log('✅ signed-in email →', user?.email);
         }
-        debugger
         setUser(user);
-        return { success: true };
+        return { success: true, user, error: null };
       }
     } catch (err) {
       console.log('err-------->', err);
-      return { success: false, error: err?.message };
+      return { success: false, error: err?.message, user: null };
     }
   }
 

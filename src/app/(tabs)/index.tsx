@@ -34,7 +34,7 @@ export default function EventsScreen() {
   const navigateToJoinEvent = () => {
     router.push('/events/join');
   };
-  console.log('user---------->', user);
+  console.log('user tabs---------->', user);
 
   // Show loading or redirect to login if no user
   if (authLoading || !user) {

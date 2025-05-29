@@ -17,11 +17,11 @@ export default function RegisterScreen() {
     setError(null);
 
     try {
-      await signInWithFacebook();
+      const { success, user, error: authError } = await signInWithFacebook();
       setLoading(false);
 
-      if (error) {
-        setError(error);
+      if (authError) {
+        setError(authError);
       } else {
         console.log('🟢 Success, navigating to tabs');
         router.replace('/(tabs)');
