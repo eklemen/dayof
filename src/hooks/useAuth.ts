@@ -1,5 +1,5 @@
-import { createContext, useContext, useEffect, useState } from 'react';
-import { User as FirebaseUser, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { User as FirebaseUser, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth/react-native';
 import { auth, FacebookAuthProvider } from '@/src/lib/firebase';
 import * as WebBrowser from 'expo-web-browser';
 import * as Facebook from 'expo-auth-session/providers/facebook';
@@ -30,7 +30,14 @@ interface AuthContextType {
 }
 
 // Create auth context
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  loading: true,
+  signInWithFacebook: async () => ({ success: false, error: 'Not implemented' }),
+  signOut: async () => {},
+  createUserProfile: async () => ({ success: false, error: 'Not implemented' }),
+  refreshUser: async () => {},
+});
 
 // Facebook App ID from environment variables or constants
 const FACEBOOK_APP_ID = Constants.expoConfig?.extra?.facebookAppId || process.env.EXPO_PUBLIC_FACEBOOK_APP_ID;
@@ -44,8 +51,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Set up Facebook auth request
   const [request, response, promptAsync] = Facebook.useAuthRequest({
     clientId: FACEBOOK_APP_ID,
-    redirectUri: makeRedirectUri({ scheme: 'dayof', path: 'auth/callback' }),
-    responseType: Facebook.ResponseType.Token,
+    // For native platforms, the redirectUri should be in the format fb${clientId}://authorize
+    // This is required by Facebook's OAuth implementation
+    responseType: "token",
     scopes: ['public_profile', 'email'],
   });
 
@@ -112,7 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Sign in to Firebase with the Facebook credential
       const result = await signInWithCredential(auth, credential);
-
+      console.log('result---------->', result);
       // User is signed in
       const firebaseUser = result.user;
 
@@ -212,21 +220,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Provide auth context values
-  return {
-    user,
-    loading,
-    signInWithFacebook,
-    signOut,
-    createUserProfile,
-    refreshUser,
-  };
+  return React.createElement(
+    AuthContext.Provider,
+    {
+      value: {
+        user,
+        loading,
+        signInWithFacebook,
+        signOut,
+        createUserProfile,
+        refreshUser,
+      }
+    },
+    children
+  );
 }
 
 // Hook to use auth context
 export function useAuth() {
   const context = useContext(AuthContext);
 
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
 

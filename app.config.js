@@ -16,6 +16,10 @@ export default {
           {
             CFBundleURLSchemes: ['dayof'],
           },
+          {
+            // Add Facebook client ID scheme for Facebook authentication
+            CFBundleURLSchemes: [`fb${process.env.EXPO_PUBLIC_FACEBOOK_APP_ID}`],
+          },
         ],
       },
     },
@@ -34,6 +38,10 @@ export default {
             {
               scheme: 'dayof',
             },
+            {
+              // Add Facebook client ID scheme for Facebook authentication
+              scheme: `fb${process.env.EXPO_PUBLIC_FACEBOOK_APP_ID}`,
+            },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
         },
@@ -49,8 +57,13 @@ export default {
       typedRoutes: true
     },
     extra: {
-      supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-      supabaseAnon: process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
+      firebaseApiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
+      firebaseAuthDomain: process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN,
+      firebaseProjectId: process.env.EXPO_PUBLIC_FIREBASE_PROJECT_ID,
+      firebaseStorageBucket: process.env.EXPO_PUBLIC_FIREBASE_STORAGE_BUCKET,
+      firebaseMessagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
+      firebaseAppId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
+      facebookAppId: process.env.EXPO_PUBLIC_FACEBOOK_APP_ID,
     }
   }
 }

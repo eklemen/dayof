@@ -1,4 +1,4 @@
-import { supabase } from '@/src/lib/supabase';
+// import { supabase } from '@/src/lib/supabase';
 
 function extractFragment(url: string) {
   // url after '#'
@@ -54,17 +54,17 @@ export async function finishFacebookLogin(deepLink: string) {
     // const expiresAt = expires_at
     //   ? new Date(parseInt(expires_at) * 1000).toISOString()
     //   : new Date(Date.now() + 3600 * 1000).toISOString(); // 1 hour from now
-    const { data: { session } } = await supabase.auth.getSession();
-    console.log('📡 cached session →', session?.user?.email);
+    // const { data: { session } } = await supabase.auth.getSession();
+    // console.log('📡 cached session →', session?.user?.email);
 
-    await supabase.auth.setSession({
-      access_token: access_token,
-      refresh_token: '', // Empty refresh token
-    }).then((data) => {
-      console.log('data---------->', data);
-    }).catch((err) => {
-      console.log('err---------->', err);
-    });
+    // await supabase.auth.setSession({
+    //   access_token: access_token,
+    //   refresh_token: '', // Empty refresh token
+    // }).then((data) => {
+    //   console.log('data---------->', data);
+    // }).catch((err) => {
+    //   console.log('err---------->', err);
+    // });
     //
     // if (!error2 && data2.session) {
     //   console.log('✅ SUCCESS with access token only!');

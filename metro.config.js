@@ -10,6 +10,9 @@ config.resolver.alias = {
   ws: require.resolve('isomorphic-ws/browser.js'),
 };
 
+config.resolver.sourceExts.push('cjs');
+config.resolver.unstable_enablePackageExports = false;
+
 config.resolver.extraNodeModules = {
   ...config.resolver.extraNodeModules,
   crypto: require.resolve('crypto-browserify'),
