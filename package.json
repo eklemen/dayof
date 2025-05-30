@@ -45,6 +45,7 @@
     "expo-symbols": "~0.4.3",
     "expo-system-ui": "~5.0.5",
     "expo-web-browser": "~14.1.5",
+    "firebase": "^11.8.1",
     "isomorphic-ws": "^5.0.0",
     "lodash.isequal": "^4.5.0",
     "lucide-react-native": "^0.475.0",

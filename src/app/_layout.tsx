@@ -6,6 +6,7 @@ import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_7
 import { COLORS } from '@/src/lib/constants';
 import { View } from 'react-native';
 import '@/src/styles/global.css'
+import { AuthProvider } from '@/src/hooks/useAuth';
 
 export default function RootLayout() {
   // Keep the framework ready hook
@@ -37,23 +38,25 @@ export default function RootLayout() {
   }
 
   return (
-    <>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: { backgroundColor: COLORS.gray[50] },
-        }}
-      >
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="enrollment-info" options={{ headerShown: false }} />
-        <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
-        <Stack.Screen name="events/create" options={{ headerShown: false }} />
-        <Stack.Screen name="events/join" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="+not-found" />
-      </Stack>
-      <StatusBar style="auto" />
-    </>
+    <AuthProvider>
+      <>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: { backgroundColor: COLORS.gray[50] },
+          }}
+        >
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ headerShown: false }} />
+          <Stack.Screen name="enrollment-info" options={{ headerShown: false }} />
+          <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
+          <Stack.Screen name="events/create" options={{ headerShown: false }} />
+          <Stack.Screen name="events/join" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="+not-found" />
+        </Stack>
+        <StatusBar style="auto" />
+      </>
+    </AuthProvider>
   );
 }
