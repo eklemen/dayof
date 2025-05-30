@@ -54,6 +54,8 @@ export async function finishFacebookLogin(deepLink: string) {
     // const expiresAt = expires_at
     //   ? new Date(parseInt(expires_at) * 1000).toISOString()
     //   : new Date(Date.now() + 3600 * 1000).toISOString(); // 1 hour from now
+    const { data: { session } } = await supabase.auth.getSession();
+    console.log('📡 cached session →', session?.user?.email);
 
     await supabase.auth.setSession({
       access_token: access_token,

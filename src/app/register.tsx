@@ -15,20 +15,9 @@ export default function RegisterScreen() {
   const handleFacebookLogin = async () => {
     setLoading(true);
     setError(null);
-
-    try {
-      const { success, user, error: authError } = await signInWithFacebook();
-      setLoading(false);
-
-      if (authError) {
-        setError(authError);
-      } else {
-        console.log('🟢 Success, navigating to tabs');
-        router.replace('/(tabs)');
-      }
-    } catch (err) {
-      console.log('err-------->', err);
-    }
+    const { user } = await signInWithFacebook();
+    console.log('user---------->', user);
+    setLoading(false);
   };
 
   const navigateToLogin = () => {
