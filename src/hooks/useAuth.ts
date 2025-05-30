@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Platform } from 'react-native';
 import { User as FirebaseUser, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth/react-native';
 import { auth, FacebookAuthProvider } from '@/src/lib/firebase';
 import * as WebBrowser from 'expo-web-browser';
@@ -9,7 +10,12 @@ import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
 
 WebBrowser.maybeCompleteAuthSession();
-
+console.log('Constants.expoConfig?.extra?.facebookAppId---------->', Constants.expoConfig?.extra?.facebookAppId);
+const redirectUri = Platform.select({
+  web: makeRedirectUri({ useProxy: true }),
+  default: `fb${Constants.expoConfig?.extra?.facebookAppId}://authorize`,
+});
+console.log('redirectUri---------->', redirectUri);
 // Define user type
 export interface User {
   id: string;
@@ -51,8 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Set up Facebook auth request
   const [request, response, promptAsync] = Facebook.useAuthRequest({
     clientId: FACEBOOK_APP_ID,
-    // For native platforms, the redirectUri should be in the format fb${clientId}://authorize
-    // This is required by Facebook's OAuth implementation
+    redirectUri,
     responseType: "token",
     scopes: ['public_profile', 'email'],
   });
