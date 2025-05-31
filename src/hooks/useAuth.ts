@@ -23,6 +23,10 @@ export interface User {
   displayName: string | null;
   photoURL: string | null;
   facebookAccessToken?: string;
+  businessName?: string;
+  instagramHandle?: string;
+  tiktokHandle?: string;
+  facebookHandle?: string;
 }
 
 // Define auth context type
@@ -66,8 +70,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        // Convert Firebase user to our User type
+        // Get existing user data from secure storage
+        let existingUserData = {};
+        try {
+          const savedUser = await SecureStore.getItemAsync('user');
+          if (savedUser) {
+            existingUserData = JSON.parse(savedUser);
+          }
+        } catch (error) {
+          console.error('Error loading user from storage:', error);
+        }
+
+        // Convert Firebase user to our User type, preserving existing data
         const userData: User = {
+          ...existingUserData, // Keep existing fields
           id: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
@@ -94,6 +110,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const savedUser = await SecureStore.getItemAsync('user');
         if (savedUser) {
           setUser(JSON.parse(savedUser));
+          // If we have a saved user, route to the main app
+          router.replace('/(tabs)');
         }
       } catch (error) {
         console.error('Error loading user from storage:', error);
@@ -129,8 +147,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // User is signed in
       const firebaseUser = result.user;
 
-      // Navigate to main app
-      router.replace('/(tabs)');
+      // Navigate to enrollment info page for new users to complete their profile
+      router.replace('/enrollment-info');
 
       return {
         success: true,
@@ -210,9 +228,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (!auth.currentUser) return;
 
     // In a real app, you would fetch the latest user data from your database
-    // For now, we'll just use the current Firebase user
+    // For now, we'll just use the current Firebase user and preserve any additional fields
     const firebaseUser = auth.currentUser;
+
+    // Preserve existing user data while updating with fresh Firebase data
     const userData: User = {
+      ...(user || {}), // Keep existing fields if user exists
       id: firebaseUser.uid,
       email: firebaseUser.email,
       displayName: firebaseUser.displayName,
