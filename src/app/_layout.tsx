@@ -1,10 +1,10 @@
 import { useEffect, useState } from 'react';
-import { Stack } from 'expo-router';
+import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/src/hooks/useFrameworkReady';
 import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
 import { COLORS } from '@/src/lib/constants';
-import { View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import '@/src/styles/global.css'
 import { AuthProvider } from '@/src/hooks/useAuth';
 
@@ -49,8 +49,16 @@ export default function RootLayout() {
           <Stack.Screen name="login" options={{ headerShown: false }} />
           <Stack.Screen name="register" options={{ headerShown: false }} />
           <Stack.Screen name="enrollment-info" options={{ headerShown: false }} />
-          <Stack.Screen name="events/[id]" options={{ headerShown: false }} />
-          <Stack.Screen name="events/create" options={{ headerShown: false }} />
+          <Stack.Screen name="events/[id]" options={{ headerShown: false, headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text>{`<`}</Text>
+              </TouchableOpacity>
+            ), }} />
+          <Stack.Screen name="events/create" options={{ headerShown: false, headerLeft: () => (
+              <TouchableOpacity onPress={() => router.back()}>
+                <Text>{`<`}</Text>
+              </TouchableOpacity>
+            ), }} />
           <Stack.Screen name="events/join" options={{ headerShown: false }} />
           <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
           <Stack.Screen name="+not-found" />
