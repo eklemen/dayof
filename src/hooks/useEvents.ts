@@ -1,12 +1,33 @@
 import { useEffect, useState } from 'react';
-// import { supabase } from '@/src/lib/supabase';
-// import { Database } from '@/src/types/supabase';
+import {
+  db,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  query,
+  where,
+  orderBy,
+  serverTimestamp
+} from '@/src/lib/firebase';
 import { DEFAULT_VENDOR_CATEGORIES } from '@/src/lib/constants';
 import { generateGroupCode } from '@/src/lib/utils';
-//
-// export type Event = Database['public']['Tables']['events']['Row'];
-// export type EventMembership = Database['public']['Tables']['event_memberships']['Row'];
-// export type VendorCategory = Database['public']['Tables']['vendor_categories']['Row'];
+import { Event } from '@/src/models/Event';
+
+export interface EventMembership {
+  userId: string;
+  eventId: string;
+  categories: string[];
+}
+
+export interface VendorCategory {
+  id: string;
+  eventId: string;
+  name: string;
+}
 
 export function useEvents(userId?: string) {
   const [events, setEvents] = useState<Event[]>([]);
@@ -24,32 +45,70 @@ export function useEvents(userId?: string) {
       setLoading(true);
 
       // Fetch events where user is a member
-      // const { data: memberships, error: membershipError } = await supabase
-      //   .from('event_memberships')
-      //   .select('event_id')
-      //   .eq('user_id', userId);
-      //
-      // if (membershipError) {
-      //   console.error('Error fetching memberships:', membershipError);
-      //   return;
-      // }
+      const membershipQuery = query(
+        collection(db, 'eventMemberships'),
+        where('userId', '==', userId)
+      );
 
-      // Fetch events where user is owner or member
-      // const eventIds = memberships?.map(m => m.event_id) || [];
-      //
-      // const { data, error } = await supabase
-      //   .from('events')
-      //   .select('*')
-      //   .or(`owner_id.eq.${userId},id.in.(${eventIds.join(',')})`)
-      //   .order('start_date', { ascending: false });
-      //
-      // if (error) {
-      //   console.error('Error fetching events:', error);
-      //   return;
-      // }
-      //
-      // setEvents(data || []);
-      // setUserEvents(data || []);
+      const membershipSnapshot = await getDocs(membershipQuery);
+      const eventIds = membershipSnapshot.docs.map(doc => doc.data().eventId);
+
+      // Fetch events where user is owner
+      const ownerQuery = query(
+        collection(db, 'events'),
+        where('ownerId', '==', userId)
+      );
+
+      const ownerSnapshot = await getDocs(ownerQuery);
+      const ownerEvents = ownerSnapshot.docs.map(doc => ({
+        eventId: doc.id,
+        ...doc.data()
+      })) as Event[];
+
+      // Fetch events where user is a member
+      let memberEvents: Event[] = [];
+      if (eventIds.length > 0) {
+        // Firebase doesn't support 'in' queries with more than 10 items
+        // So we need to batch the queries if there are more than 10 eventIds
+        const batchSize = 10;
+        const batches = [];
+
+        for (let i = 0; i < eventIds.length; i += batchSize) {
+          const batch = eventIds.slice(i, i + batchSize);
+          batches.push(batch);
+        }
+
+        for (const batch of batches) {
+          const memberQuery = query(
+            collection(db, 'events'),
+            where('eventId', 'in', batch)
+          );
+
+          const memberSnapshot = await getDocs(memberQuery);
+          const batchEvents = memberSnapshot.docs.map(doc => ({
+            eventId: doc.id,
+            ...doc.data()
+          })) as Event[];
+
+          memberEvents = [...memberEvents, ...batchEvents];
+        }
+      }
+
+      // Combine and deduplicate events
+      const allEvents = [...ownerEvents, ...memberEvents];
+      const uniqueEvents = Array.from(
+        new Map(allEvents.map(event => [event.eventId, event])).values()
+      );
+
+      // Sort by startDate descending
+      uniqueEvents.sort((a, b) => {
+        if (!a.startDate) return 1;
+        if (!b.startDate) return -1;
+        return new Date(b.startDate).getTime() - new Date(a.startDate).getTime();
+      });
+
+      setEvents(uniqueEvents);
+      setUserEvents(uniqueEvents);
     } catch (error) {
       console.error('Error in fetchUserEvents:', error);
     } finally {
@@ -59,69 +118,69 @@ export function useEvents(userId?: string) {
 
   const getEvent = async (eventId: string) => {
     try {
-      // const { data, error } = await supabase
-      //   .from('events')
-      //   .select('*')
-      //   .eq('id', eventId)
-      //   .single();
-      //
-      // if (error) {
-      //   console.error('Error fetching event:', error);
-      //   return null;
-      // }
-      //
-      // return data;
+      const eventDoc = await getDoc(doc(db, 'events', eventId));
+
+      if (!eventDoc.exists()) {
+        console.error('Event not found');
+        return null;
+      }
+
+      return {
+        eventId: eventDoc.id,
+        ...eventDoc.data()
+      } as Event;
     } catch (error) {
       console.error('Error in getEvent:', error);
       return null;
     }
   };
 
-  const createEvent = async (eventData: Omit<Event, 'id' | 'created_at' | 'group_code' | 'is_archived'>, ownerId: string) => {
+  const createEvent = async (eventData: Omit<Event, 'eventId'>, ownerId: string) => {
     try {
       const groupCode = generateGroupCode();
 
       // Create the event
-      // const { data: eventData, error: eventError } = await supabase
-      //   .from('events')
-      //   .insert({
-      //     ...eventData,
-      //     owner_id: ownerId,
-      //     group_code: groupCode,
-      //     is_archived: false,
-      //   })
-      //   .select()
-      //   .single();
-      //
-      // if (eventError) throw eventError;
-      //
-      // // Add default vendor categories
-      // const categoriesData = DEFAULT_VENDOR_CATEGORIES.map(name => ({
-      //   event_id: eventData.id,
-      //   name,
-      // }));
-      //
-      // const { error: categoriesError } = await supabase
-      //   .from('vendor_categories')
-      //   .insert(categoriesData);
-      //
-      // if (categoriesError) throw categoriesError;
-      //
-      // // Add the creator as a member (planner role)
-      // const { error: membershipError } = await supabase
-      //   .from('event_memberships')
-      //   .insert({
-      //     user_id: ownerId,
-      //     event_id: eventData.id,
-      //     categories: [], // Planner doesn't need categories
-      //   });
-      //
-      // if (membershipError) throw membershipError;
-      //
-      // // Refetch events to update the state
-      // fetchUserEvents(ownerId);
-      //
-      // return { success: true, data: eventData, error: null };
+      const newEventRef = doc(collection(db, 'events'));
+      const newEvent = {
+        ...eventData,
+        ownerId,
+        groupCode,
+        isArchived: false,
+        createdAt: serverTimestamp()
+      };
+
+      await setDoc(newEventRef, newEvent);
+
+      const createdEvent = {
+        eventId: newEventRef.id,
+        ...newEvent
+      } as Event;
+
+      // Add default vendor categories
+      const categoriesPromises = DEFAULT_VENDOR_CATEGORIES.map(name => {
+        const categoryRef = doc(collection(db, 'vendorCategories'));
+        return setDoc(categoryRef, {
+          eventId: newEventRef.id,
+          name,
+        });
+      });
+
+      await Promise.all(categoriesPromises);
+
+      // Add the creator as a member (planner role)
+      const membershipRef = doc(collection(db, 'eventMemberships'));
+      await setDoc(membershipRef, {
+        userId: ownerId,
+        eventId: newEventRef.id,
+        categories: [], // Planner doesn't need categories
+        role: 'planner',
+        joinedAt: serverTimestamp()
+      });
+
+      // Refetch events to update the state
+      fetchUserEvents(ownerId);
+
+      return { success: true, data: createdEvent, error: null };
     } catch (error: any) {
       console.error('Error creating event:', error);
       return { success: false, data: null, error: error.message };
@@ -131,41 +190,50 @@ export function useEvents(userId?: string) {
   const joinEventWithCode = async (groupCode: string, userId: string) => {
     try {
       // Find the event with the code
-      // const { data: event, error: eventError } = await supabase
-      //   .from('events')
-      //   .select('*')
-      //   .eq('group_code', groupCode)
-      //   .single();
-      //
-      // if (eventError) throw new Error('Event not found with that code');
-      //
-      // // Check if already a member
-      // const { data: existingMembership, error: membershipCheckError } = await supabase
-      //   .from('event_memberships')
-      //   .select('*')
-      //   .eq('user_id', userId)
-      //   .eq('event_id', event.id)
-      //   .single();
-      //
-      // if (existingMembership) {
-      //   return { success: true, data: event, error: null, alreadyMember: true };
-      // }
-      //
-      // // Add as a member
-      // const { error: membershipError } = await supabase
-      //   .from('event_memberships')
-      //   .insert({
-      //     user_id: userId,
-      //     event_id: event.id,
-      //     categories: [], // Categories will be assigned by planner
-      //   });
-      //
-      // if (membershipError) throw membershipError;
-      //
-      // // Refetch events to update the state
-      // fetchUserEvents(userId);
-      //
-      // return { success: true, data: event, error: null };
+      const eventQuery = query(
+        collection(db, 'events'),
+        where('groupCode', '==', groupCode)
+      );
+
+      const eventSnapshot = await getDocs(eventQuery);
+
+      if (eventSnapshot.empty) {
+        throw new Error('Event not found with that code');
+      }
+
+      const eventDoc = eventSnapshot.docs[0];
+      const event = {
+        eventId: eventDoc.id,
+        ...eventDoc.data()
+      } as Event;
+
+      // Check if already a member
+      const membershipQuery = query(
+        collection(db, 'eventMemberships'),
+        where('userId', '==', userId),
+        where('eventId', '==', event.eventId)
+      );
+
+      const membershipSnapshot = await getDocs(membershipQuery);
+
+      if (!membershipSnapshot.empty) {
+        return { success: true, data: event, error: null, alreadyMember: true };
+      }
+
+      // Add as a member
+      const membershipRef = doc(collection(db, 'eventMemberships'));
+      await setDoc(membershipRef, {
+        userId,
+        eventId: event.eventId,
+        categories: [], // Categories will be assigned by planner
+        role: 'member',
+        joinedAt: serverTimestamp()
+      });
+
+      // Refetch events to update the state
+      fetchUserEvents(userId);
+
+      return { success: true, data: event, error: null };
     } catch (error: any) {
       console.error('Error joining event:', error);
       return { success: false, data: null, error: error.message };
@@ -174,17 +242,48 @@ export function useEvents(userId?: string) {
 
   const getEventMembers = async (eventId: string) => {
     try {
-      // const { data, error } = await supabase
-      //   .from('event_memberships')
-      //   .select(`
-      //     users (id, display_name, company_name, instagram_handle, roles),
-      //     categories
-      //   `)
-      //   .eq('event_id', eventId);
+      const membershipQuery = query(
+        collection(db, 'eventMemberships'),
+        where('eventId', '==', eventId)
+      );
 
-      if (error) throw error;
+      const membershipSnapshot = await getDocs(membershipQuery);
 
-      return { success: true, data, error: null };
+      if (membershipSnapshot.empty) {
+        return { success: true, data: [], error: null };
+      }
+
+      // Get all user IDs from memberships
+      const userIds = membershipSnapshot.docs.map(doc => doc.data().userId);
+
+      // Get user details for each member
+      const membersWithDetails = await Promise.all(
+        membershipSnapshot.docs.map(async (memberDoc) => {
+          const memberData = memberDoc.data();
+          const userDoc = await getDoc(doc(db, 'users', memberData.userId));
+
+          if (!userDoc.exists()) {
+            return {
+              ...memberData,
+              user: { id: memberData.userId }
+            };
+          }
+
+          const userData = userDoc.data();
+          return {
+            ...memberData,
+            user: {
+              id: userDoc.id,
+              displayName: userData.displayName,
+              companyName: userData.companyName,
+              instagramHandle: userData.instagramHandle,
+              roles: userData.roles
+            }
+          };
+        })
+      );
+
+      return { success: true, data: membersWithDetails, error: null };
     } catch (error: any) {
       console.error('Error fetching event members:', error);
       return { success: false, data: null, error: error.message };
@@ -193,14 +292,23 @@ export function useEvents(userId?: string) {
 
   const getEventCategories = async (eventId: string) => {
     try {
-      // const { data, error } = await supabase
-      //   .from('vendor_categories')
-      //   .select('*')
-      //   .eq('event_id', eventId);
-      //
-      // if (error) throw error;
-      //
-      // return { success: true, data, error: null };
+      const categoriesQuery = query(
+        collection(db, 'vendorCategories'),
+        where('eventId', '==', eventId)
+      );
+
+      const categoriesSnapshot = await getDocs(categoriesQuery);
+
+      if (categoriesSnapshot.empty) {
+        return { success: true, data: [], error: null };
+      }
+
+      const categories = categoriesSnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      })) as VendorCategory[];
+
+      return { success: true, data: categories, error: null };
     } catch (error: any) {
       console.error('Error fetching event categories:', error);
       return { success: false, data: null, error: error.message };

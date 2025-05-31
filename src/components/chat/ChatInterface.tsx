@@ -24,14 +24,14 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
   }, [eventId, parentId]);
 
   useEffect(() => {
-    // Convert Supabase messages to GiftedChat format
+    // Convert Firestore messages to GiftedChat format
     const formattedMessages = messages.map(msg => ({
-      _id: msg.id,
+      _id: msg.messageId,
       text: msg.body,
-      createdAt: new Date(msg.created_at),
+      createdAt: new Date(msg.createdAt),
       user: {
-        _id: msg.author_id,
-        name: (msg as any).users?.display_name || 'User',
+        _id: msg.authorId,
+        name: msg.author?.displayName || 'User',
       },
     }));
 

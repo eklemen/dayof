@@ -1,8 +1,8 @@
 declare global {
   namespace NodeJS {
     interface ProcessEnv {
-      EXPO_PUBLIC_SUPABASE_URL: string;
-      EXPO_PUBLIC_SUPABASE_ANON_KEY: string;
+      // Firebase environment variables are handled through app.config.js
+      // Add any additional environment variables here if needed
     }
   }
 }

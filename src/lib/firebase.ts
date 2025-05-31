@@ -7,6 +7,23 @@ import {
   getAuth,
   Auth,
 } from 'firebase/auth/react-native';
+import {
+  getFirestore,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  Timestamp,
+  serverTimestamp,
+} from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
 
@@ -41,4 +58,25 @@ if (!getApps().length) {
   }
 }
 
-export { auth, FacebookAuthProvider };
+// Initialize Firestore
+const db = getFirestore(app);
+
+export {
+  auth,
+  db,
+  FacebookAuthProvider,
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  setDoc,
+  addDoc,
+  updateDoc,
+  deleteDoc,
+  query,
+  where,
+  orderBy,
+  onSnapshot,
+  Timestamp,
+  serverTimestamp
+};
