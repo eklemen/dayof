@@ -7,35 +7,44 @@ import { Card } from '@/src/components/ui/Card';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useEvents } from '@/src/hooks/useEvents';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+
+interface EventFormValues {
+  eventName: string;
+  startDate: string;
+  endDate: string;
+  venueName: string;
+  address: string;
+  venuePhone: string;
+}
 
 export function CreateEventForm() {
   const { user } = useAuth();
   const { createEvent } = useEvents(user?.id);
-
-  const [eventName, setEventName] = useState('');
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  const [venueName, setVenueName] = useState('');
-  const [address, setAddress] = useState('');
-  const [venuePhone, setVenuePhone] = useState('');
-
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleCreateEvent = async () => {
+  const { control, handleSubmit, formState: { errors } } = useForm<EventFormValues>({
+    defaultValues: {
+      eventName: '',
+      startDate: '',
+      endDate: '',
+      venueName: '',
+      address: '',
+      venuePhone: ''
+    },
+    mode: 'onSubmit'
+  });
+
+  const onSubmit: SubmitHandler<EventFormValues> = async (data) => {
     if (!user) {
       setError('You must be logged in to create an event');
       return;
     }
 
-    if (!eventName || !startDate || !endDate) {
-      setError('Event name, start date and end date are required');
-      return;
-    }
-
     // Simple date validation
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    const start = new Date(data.startDate);
+    const end = new Date(data.endDate);
 
     if (isNaN(start.getTime()) || isNaN(end.getTime())) {
       setError('Please enter valid dates in YYYY-MM-DD format');
@@ -51,12 +60,12 @@ export function CreateEventForm() {
     setError(null);
 
     const eventData = {
-      event_name: eventName,
-      start_date: startDate,
-      end_date: endDate,
-      venue_name: venueName || null,
-      address: address || null,
-      venue_phone: venuePhone || null,
+      event_name: data.eventName,
+      start_date: data.startDate,
+      end_date: data.endDate,
+      venue_name: data.venueName || null,
+      address: data.address || null,
+      venue_phone: data.venuePhone || null,
     };
 
     const { success, error: createError } = await createEvent(eventData, user.id);
@@ -82,47 +91,95 @@ export function CreateEventForm() {
           </View>
         )}
 
-        <Input
-          label="Event Name *"
-          placeholder="Wedding, Conference, etc."
-          value={eventName}
-          onChangeText={setEventName}
+        <Controller
+          control={control}
+          name="eventName"
+          rules={{ required: 'Event name is required' }}
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <Input
+              label="Event Name *"
+              placeholder="Wedding, Conference, etc."
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={error?.message}
+            />
+          )}
         />
 
-        <Input
-          label="Start Date *"
-          placeholder="YYYY-MM-DD"
-          value={startDate}
-          onChangeText={setStartDate}
+        <Controller
+          control={control}
+          name="startDate"
+          rules={{ required: 'Start date is required' }}
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <Input
+              label="Start Date *"
+              placeholder="YYYY-MM-DD"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={error?.message}
+            />
+          )}
         />
 
-        <Input
-          label="End Date *"
-          placeholder="YYYY-MM-DD"
-          value={endDate}
-          onChangeText={setEndDate}
+        <Controller
+          control={control}
+          name="endDate"
+          rules={{ required: 'End date is required' }}
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <Input
+              label="End Date *"
+              placeholder="YYYY-MM-DD"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              error={error?.message}
+            />
+          )}
         />
 
-        <Input
-          label="Venue Name"
-          placeholder="Grand Hotel"
-          value={venueName}
-          onChangeText={setVenueName}
+        <Controller
+          control={control}
+          name="venueName"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              label="Venue Name"
+              placeholder="Grand Hotel"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+            />
+          )}
         />
 
-        <Input
-          label="Venue Address"
-          placeholder="123 Main Street, City, State"
-          value={address}
-          onChangeText={setAddress}
+        <Controller
+          control={control}
+          name="address"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              label="Venue Address"
+              placeholder="123 Main Street, City, State"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+            />
+          )}
         />
 
-        <Input
-          label="Venue Phone"
-          placeholder="(123) 456-7890"
-          value={venuePhone}
-          onChangeText={setVenuePhone}
-          keyboardType="phone-pad"
+        <Controller
+          control={control}
+          name="venuePhone"
+          render={({ field: { onChange, onBlur, value } }) => (
+            <Input
+              label="Venue Phone"
+              placeholder="(123) 456-7890"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              keyboardType="phone-pad"
+            />
+          )}
         />
 
         <View style={styles.buttonContainer}>
@@ -134,7 +191,7 @@ export function CreateEventForm() {
           />
           <Button
             title="Create Event"
-            onPress={handleCreateEvent}
+            onPress={handleSubmit(onSubmit)}
             loading={loading}
             style={styles.createButton}
           />

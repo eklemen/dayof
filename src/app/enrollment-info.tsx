@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
+import { BackButton } from '@/src/components/ui/BackButton';
 import { useAuth } from '@/src/hooks/useAuth';
 import { router } from 'expo-router';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
@@ -88,6 +89,9 @@ export default function EnrollmentInfoScreen() {
         <View style={styles.overlay} />
       </View>
       <View style={styles.formContainer}>
+        <View style={styles.header}>
+          <BackButton color={COLORS.primary[700]} />
+        </View>
         <ScrollView style={styles.scrollView}>
           <Text style={styles.title}>Complete Your Profile</Text>
           <Text style={styles.subtitle}>Tell us a bit more about yourself</Text>
@@ -222,6 +226,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.m,
+    paddingTop: SPACING.m,
   },
   backgroundImage: {
     position: 'absolute',

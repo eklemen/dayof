@@ -4,6 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { AuthForm } from '@/src/components/auth/AuthForm';
 import { Button } from '@/src/components/ui/Button';
+import { BackButton } from '@/src/components/ui/BackButton';
 import { useAuth } from '@/src/hooks/useAuth';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
@@ -36,7 +37,10 @@ export default function LoginScreen() {
         <View style={styles.overlay} />
       </View>
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Sign In</Text>
+        <View style={styles.header}>
+          <BackButton color={COLORS.primary[700]} />
+          <Text style={styles.title}>Sign In</Text>
+        </View>
 
         {error && (
           <View style={styles.errorContainer}>
@@ -75,6 +79,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.m,
   },
   backgroundImage: {
     position: 'absolute',

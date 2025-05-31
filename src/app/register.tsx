@@ -3,6 +3,7 @@ import { StyleSheet, View, Image, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { Button } from '@/src/components/ui/Button';
+import { BackButton } from '@/src/components/ui/BackButton';
 import { router } from 'expo-router';
 import { useAuth } from '@/src/hooks/useAuth';
 import { Feather } from '@expo/vector-icons';
@@ -38,7 +39,10 @@ export default function RegisterScreen() {
         <View style={styles.overlay} />
       </View>
       <View style={styles.formContainer}>
-        <Text style={styles.title}>Create Account</Text>
+        <View style={styles.header}>
+          <BackButton color={COLORS.primary[700]} />
+          <Text style={styles.title}>Create Account</Text>
+        </View>
 
         {error && (
           <View style={styles.errorContainer}>
@@ -88,6 +92,11 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     position: 'relative',
+  },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.m,
   },
   backgroundImage: {
     position: 'absolute',

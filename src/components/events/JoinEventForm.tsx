@@ -7,30 +7,35 @@ import { Card } from '@/src/components/ui/Card';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useEvents } from '@/src/hooks/useEvents';
+import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+
+interface JoinEventFormValues {
+  groupCode: string;
+}
 
 export function JoinEventForm() {
   const { user } = useAuth();
   const { joinEventWithCode } = useEvents(user?.id);
-
-  const [groupCode, setGroupCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handleJoinEvent = async () => {
+  const { control, handleSubmit, formState: { errors } } = useForm<JoinEventFormValues>({
+    defaultValues: {
+      groupCode: ''
+    },
+    mode: 'onSubmit'
+  });
+
+  const onSubmit: SubmitHandler<JoinEventFormValues> = async (data) => {
     if (!user) {
       setError('You must be logged in to join an event');
-      return;
-    }
-
-    if (!groupCode) {
-      setError('Please enter the event code');
       return;
     }
 
     setLoading(true);
     setError(null);
 
-    const { success, error: joinError, alreadyMember } = await joinEventWithCode(groupCode, user.id);
+    const { success, error: joinError, alreadyMember } = await joinEventWithCode(data.groupCode, user.id);
 
     setLoading(false);
 
@@ -57,12 +62,21 @@ export function JoinEventForm() {
           </View>
         )}
 
-        <Input
-          label="Event Code"
-          placeholder="Enter the event code"
-          value={groupCode}
-          onChangeText={setGroupCode}
-          autoCapitalize="characters"
+        <Controller
+          control={control}
+          name="groupCode"
+          rules={{ required: 'Event code is required' }}
+          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+            <Input
+              label="Event Code"
+              placeholder="Enter the event code"
+              value={value}
+              onChangeText={onChange}
+              onBlur={onBlur}
+              autoCapitalize="characters"
+              error={error?.message}
+            />
+          )}
         />
 
         <Text style={styles.infoText}>
