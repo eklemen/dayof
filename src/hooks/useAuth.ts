@@ -33,7 +33,7 @@ export interface User {
 interface AuthContextType {
   user: User | null;
   loading: boolean;
-  signInWithFacebook: () => Promise<{ success: boolean; error?: string; user?: User }>;
+  signInWithFacebook: (source?: 'login' | 'register') => Promise<{ success: boolean; error?: string; user?: User }>;
   signOut: () => Promise<void>;
   createUserProfile: (partial: Partial<User>) => Promise<{ success: boolean; error?: string; data?: User }>;
   refreshUser: () => Promise<void>;
@@ -131,12 +131,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (response?.type === 'success' && response.authentication) {
       const { accessToken } = response.authentication;
       setFacebookAccessToken(accessToken);
-      handleFacebookLogin(accessToken);
+      handleFacebookLogin(accessToken, loginSource);
     }
   }, [response]);
 
+  // Track the source of the login (login page or register page)
+  const [loginSource, setLoginSource] = useState<'login' | 'register' | undefined>(undefined);
+
   // Function to handle Facebook login with Firebase
-  const handleFacebookLogin = async (token: string) => {
+  const handleFacebookLogin = async (token: string, source?: 'login' | 'register') => {
     try {
       // Create a Facebook credential with the token
       const credential = FacebookAuthProvider.credential(token);
@@ -147,8 +150,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // User is signed in
       const firebaseUser = result.user;
 
-      // Navigate to enrollment info page for new users to complete their profile
-      router.replace('/enrollment-info');
+      // Route based on the source of the login
+      if (source === 'login') {
+        // If logging in from the login page, go directly to the main app
+        router.replace('/(tabs)');
+      } else {
+        // If registering from the register page, go to enrollment info
+        router.replace('/enrollment-info');
+      }
 
       return {
         success: true,
@@ -170,8 +179,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   // Function to sign in with Facebook
-  const signInWithFacebook = async () => {
+  const signInWithFacebook = async (source?: 'login' | 'register') => {
     try {
+      // Set the login source to be used in the useEffect when the response comes back
+      setLoginSource(source);
+
       const result = await promptAsync();
 
       if (result.type !== 'success') {

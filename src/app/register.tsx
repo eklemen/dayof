@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Image, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Image, Text, TouchableOpacity } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { Button } from '@/src/components/ui/Button';
@@ -15,7 +15,7 @@ export default function RegisterScreen() {
   const handleFacebookLogin = async () => {
     setLoading(true);
     setError(null);
-    const { user } = await signInWithFacebook();
+    const { user } = await signInWithFacebook('register');
     console.log('user---------->', user);
     setLoading(false);
   };
@@ -29,20 +29,20 @@ export default function RegisterScreen() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
-      <View className="h-[200px] justify-center items-center relative">
+    <SafeAreaView style={styles.container}>
+      <View style={styles.logoContainer}>
         <Image
           source={{ uri: 'https://images.pexels.com/photos/1047940/pexels-photo-1047940.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=750&w=1260' }}
-          className="absolute w-full h-full"
+          style={styles.backgroundImage}
         />
-        <View className="absolute w-full h-full bg-black/40" />
+        <View style={styles.overlay} />
       </View>
-      <View className="flex-1 bg-white rounded-t-3xl -mt-6 p-4">
-        <Text className="text-2xl font-bold text-gray-800 mb-4">Create Account</Text>
+      <View style={styles.formContainer}>
+        <Text style={styles.title}>Create Account</Text>
 
         {error && (
-          <View className="bg-error-500/[0.15] p-4 rounded-lg mb-4">
-            <Text className="text-error-600 text-sm">Something went wrong while logging in.</Text>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>Something went wrong while logging in.</Text>
           </View>
         )}
 
@@ -55,10 +55,10 @@ export default function RegisterScreen() {
           icon={<Feather name="facebook" size={20} color="white" style={{ marginRight: SPACING.s }} />}
         />
 
-        <View className="flex-row items-center my-4">
-          <View className="flex-1 h-[1px] bg-gray-300" />
-          <Text className="mx-4 text-gray-500 font-medium">OR</Text>
-          <View className="flex-1 h-[1px] bg-gray-300" />
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
         </View>
 
         <Button
@@ -68,8 +68,8 @@ export default function RegisterScreen() {
           style={{ marginTop: SPACING.s }}
         />
 
-        <TouchableOpacity onPress={navigateToLogin} className="mt-4 items-center">
-          <Text className="text-primary-700 text-base">
+        <TouchableOpacity onPress={navigateToLogin} style={styles.loginLink}>
+          <Text style={styles.loginLinkText}>
             Already have an account? Sign in
           </Text>
         </TouchableOpacity>
@@ -77,3 +77,74 @@ export default function RegisterScreen() {
     </SafeAreaView>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  logoContainer: {
+    height: 200,
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  backgroundImage: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+  },
+  overlay: {
+    position: 'absolute',
+    width: '100%',
+    height: '100%',
+    backgroundColor: 'rgba(0,0,0,0.4)',
+  },
+  formContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    marginTop: -24,
+    padding: 16,
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: COLORS.gray[800],
+    marginBottom: 16,
+  },
+  errorContainer: {
+    backgroundColor: COLORS.error[500] + '26', // 15% opacity
+    padding: 16,
+    borderRadius: 8,
+    marginBottom: 16,
+  },
+  errorText: {
+    color: COLORS.error[600],
+    fontSize: 14,
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.gray[300],
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: COLORS.gray[500],
+    fontWeight: '500',
+  },
+  loginLink: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  loginLinkText: {
+    color: COLORS.primary[700],
+    fontSize: 16,
+  },
+});

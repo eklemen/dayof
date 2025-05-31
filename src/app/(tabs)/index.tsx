@@ -1,4 +1,3 @@
-import { useEffect } from 'react';
 import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,20 +11,6 @@ import { useEvents } from '@/src/hooks/useEvents';
 export default function EventsScreen() {
   const { user, loading: authLoading } = useAuth();
   const { userEvents, loading: eventsLoading, refreshEvents } = useEvents(user?.id);
-
-  useEffect(() => {
-    // console.log('user---------->', user);
-    // console.log('authLoading---------->', authLoading);
-    if (!user) {
-      router.replace('/login');
-    }
-  }, [user, authLoading]);
-
-  useEffect(() => {
-    if (user?.id) {
-      refreshEvents(user.id);
-    }
-  }, [user]);
 
   const navigateToCreateEvent = () => {
     router.push('/events/create');
