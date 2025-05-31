@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  db,
+  firestore,
   collection,
   doc,
   getDoc,
@@ -46,7 +46,7 @@ export function useEvents(userId?: string) {
 
       // Fetch events where user is a member
       const membershipQuery = query(
-        collection(db, 'eventMemberships'),
+        collection(firestore, 'eventMemberships'),
         where('userId', '==', userId)
       );
 
@@ -55,7 +55,7 @@ export function useEvents(userId?: string) {
 
       // Fetch events where user is owner
       const ownerQuery = query(
-        collection(db, 'events'),
+        collection(firestore, 'events'),
         where('ownerId', '==', userId)
       );
 
@@ -80,7 +80,7 @@ export function useEvents(userId?: string) {
 
         for (const batch of batches) {
           const memberQuery = query(
-            collection(db, 'events'),
+            collection(firestore, 'events'),
             where('eventId', 'in', batch)
           );
 
@@ -118,7 +118,7 @@ export function useEvents(userId?: string) {
 
   const getEvent = async (eventId: string) => {
     try {
-      const eventDoc = await getDoc(doc(db, 'events', eventId));
+      const eventDoc = await getDoc(doc(firestore, 'events', eventId));
 
       if (!eventDoc.exists()) {
         console.error('Event not found');
@@ -140,7 +140,7 @@ export function useEvents(userId?: string) {
       const groupCode = generateGroupCode();
 
       // Create the event
-      const newEventRef = doc(collection(db, 'events'));
+      const newEventRef = doc(collection(firestore, 'events'));
       const newEvent = {
         ...eventData,
         ownerId,
@@ -158,7 +158,7 @@ export function useEvents(userId?: string) {
 
       // Add default vendor categories
       const categoriesPromises = DEFAULT_VENDOR_CATEGORIES.map(name => {
-        const categoryRef = doc(collection(db, 'vendorCategories'));
+        const categoryRef = doc(collection(firestore, 'vendorCategories'));
         return setDoc(categoryRef, {
           eventId: newEventRef.id,
           name,
@@ -168,7 +168,7 @@ export function useEvents(userId?: string) {
       await Promise.all(categoriesPromises);
 
       // Add the creator as a member (planner role)
-      const membershipRef = doc(collection(db, 'eventMemberships'));
+      const membershipRef = doc(collection(firestore, 'eventMemberships'));
       await setDoc(membershipRef, {
         userId: ownerId,
         eventId: newEventRef.id,
@@ -191,7 +191,7 @@ export function useEvents(userId?: string) {
     try {
       // Find the event with the code
       const eventQuery = query(
-        collection(db, 'events'),
+        collection(firestore, 'events'),
         where('groupCode', '==', groupCode)
       );
 
@@ -209,7 +209,7 @@ export function useEvents(userId?: string) {
 
       // Check if already a member
       const membershipQuery = query(
-        collection(db, 'eventMemberships'),
+        collection(firestore, 'eventMemberships'),
         where('userId', '==', userId),
         where('eventId', '==', event.eventId)
       );
@@ -221,7 +221,7 @@ export function useEvents(userId?: string) {
       }
 
       // Add as a member
-      const membershipRef = doc(collection(db, 'eventMemberships'));
+      const membershipRef = doc(collection(firestore, 'eventMemberships'));
       await setDoc(membershipRef, {
         userId,
         eventId: event.eventId,
@@ -243,7 +243,7 @@ export function useEvents(userId?: string) {
   const getEventMembers = async (eventId: string) => {
     try {
       const membershipQuery = query(
-        collection(db, 'eventMemberships'),
+        collection(firestore, 'eventMemberships'),
         where('eventId', '==', eventId)
       );
 
@@ -260,7 +260,7 @@ export function useEvents(userId?: string) {
       const membersWithDetails = await Promise.all(
         membershipSnapshot.docs.map(async (memberDoc) => {
           const memberData = memberDoc.data();
-          const userDoc = await getDoc(doc(db, 'users', memberData.userId));
+          const userDoc = await getDoc(doc(firestore, 'users', memberData.userId));
 
           if (!userDoc.exists()) {
             return {
@@ -293,7 +293,7 @@ export function useEvents(userId?: string) {
   const getEventCategories = async (eventId: string) => {
     try {
       const categoriesQuery = query(
-        collection(db, 'vendorCategories'),
+        collection(firestore, 'vendorCategories'),
         where('eventId', '==', eventId)
       );
 

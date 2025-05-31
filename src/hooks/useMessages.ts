@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  db,
+  firestore,
   collection,
   doc,
   getDoc,
@@ -42,14 +42,14 @@ export function useMessages(eventId?: string) {
       let messagesQuery;
       if (parentMessageId === null) {
         messagesQuery = query(
-          collection(db, 'messages'),
+          collection(firestore, 'messages'),
           where('eventId', '==', eventId),
           where('parentMessageId', '==', null),
           orderBy('createdAt', 'desc')
         );
       } else {
         messagesQuery = query(
-          collection(db, 'messages'),
+          collection(firestore, 'messages'),
           where('eventId', '==', eventId),
           where('parentMessageId', '==', parentMessageId),
           orderBy('createdAt', 'desc')
@@ -67,7 +67,7 @@ export function useMessages(eventId?: string) {
       const messagesWithAuthors = await Promise.all(
         messagesSnapshot.docs.map(async (messageDoc) => {
           const messageData = messageDoc.data();
-          const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
+          const authorDoc = await getDoc(doc(firestore, 'users', messageData.authorId));
 
           const message: Message = {
             messageId: messageDoc.id,
@@ -116,7 +116,7 @@ export function useMessages(eventId?: string) {
       }
 
       // Create a new message document
-      const messageRef = doc(collection(db, 'messages'));
+      const messageRef = doc(collection(firestore, 'messages'));
       const messageData = {
         eventId,
         authorId,
@@ -130,7 +130,7 @@ export function useMessages(eventId?: string) {
       await setDoc(messageRef, messageData);
 
       // Get the author details
-      const authorDoc = await getDoc(doc(db, 'users', authorId));
+      const authorDoc = await getDoc(doc(firestore, 'users', authorId));
 
       const newMessage: Message = {
         messageId: messageRef.id,
@@ -153,7 +153,7 @@ export function useMessages(eventId?: string) {
   const addReaction = async (messageId: string, emoji: string, userId: string) => {
     try {
       // Get the message document
-      const messageRef = doc(db, 'messages', messageId);
+      const messageRef = doc(firestore, 'messages', messageId);
       const messageDoc = await getDoc(messageRef);
 
       if (!messageDoc.exists()) {
@@ -193,7 +193,7 @@ export function useMessages(eventId?: string) {
   const subscribeToMessages = (eventId: string) => {
     // Create a query for messages in this event
     const messagesQuery = query(
-      collection(db, 'messages'),
+      collection(firestore, 'messages'),
       where('eventId', '==', eventId)
     );
 

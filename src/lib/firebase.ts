@@ -59,11 +59,11 @@ if (!getApps().length) {
 }
 
 // Initialize Firestore
-const db = getFirestore(app);
+const firestore = getFirestore(app);
 
 export {
   auth,
-  db,
+  firestore,
   FacebookAuthProvider,
   collection,
   doc,
