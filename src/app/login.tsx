@@ -37,31 +37,12 @@ export default function LoginScreen() {
         <View style={styles.overlay} />
       </View>
       <View style={styles.formContainer}>
-        <View style={styles.header}>
-          <BackButton color={COLORS.primary[700]} />
-          <Text style={styles.title}>Sign In</Text>
-        </View>
 
         {error && (
           <View style={styles.errorContainer}>
             <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
-
-        <Button
-          title="Continue with Facebook"
-          onPress={handleFacebookLogin}
-          loading={loading}
-          style={{ backgroundColor: '#1877F2', marginBottom: SPACING.m }}
-          textStyle={{ color: 'white' }}
-          icon={<Feather name="facebook" size={20} color="white" style={{ marginRight: SPACING.s }} />}
-        />
-
-        <View style={styles.divider}>
-          <View style={styles.dividerLine} />
-          <Text style={styles.dividerText}>OR</Text>
-          <View style={styles.dividerLine} />
-        </View>
 
         <AuthForm type="login" />
       </View>

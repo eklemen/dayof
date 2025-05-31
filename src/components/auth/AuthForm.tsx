@@ -6,6 +6,7 @@ import { Button } from '@/src/components/ui/Button';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
+import { Feather } from '@expo/vector-icons';
 
 interface AuthFormProps {
   type: 'login' | 'register';
@@ -19,10 +20,22 @@ type FormValues = {
 };
 
 export function AuthForm({ type }: AuthFormProps) {
-  const { signInWithEmail, createUserProfile } = useAuth();
+  const { signInWithEmail, signInWithFacebook } = useAuth();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
+  const handleFacebookLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { user } = await signInWithFacebook('login');
+      console.log('user from login page---------->', user);
+    } catch (err) {
+      setError('Failed to login with Facebook');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const { control, handleSubmit, formState: { errors }, watch, setValue } = useForm<FormValues>({
     defaultValues: {
@@ -174,6 +187,20 @@ export function AuthForm({ type }: AuthFormProps) {
             </View>
           </>
         )}
+        <Button
+          title="Continue with Facebook"
+          onPress={handleFacebookLogin}
+          loading={loading}
+          style={{ backgroundColor: '#1877F2', marginBottom: SPACING.m }}
+          textStyle={{ color: 'white' }}
+          icon={<Feather name="facebook" size={20} color="white" style={{ marginRight: SPACING.s }} />}
+        />
+
+        <View style={styles.divider}>
+          <View style={styles.dividerLine} />
+          <Text style={styles.dividerText}>OR</Text>
+          <View style={styles.dividerLine} />
+        </View>
 
         <Controller
           control={control}
@@ -285,5 +312,20 @@ const styles = StyleSheet.create({
   },
   roleTextActive: {
     color: COLORS.primary[700],
+  },
+  divider: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginVertical: 16,
+  },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: COLORS.gray[300],
+  },
+  dividerText: {
+    marginHorizontal: 16,
+    color: COLORS.gray[500],
+    fontWeight: '500',
   },
 });

@@ -9,7 +9,7 @@ import { useAuth } from '@/src/hooks/useAuth';
 import { useEvents } from '@/src/hooks/useEvents';
 
 export default function EventsScreen() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, loading: authLoading, signOut } = useAuth();
   const { userEvents, loading: eventsLoading, refreshEvents } = useEvents(user?.id);
 
   const navigateToCreateEvent = () => {
@@ -19,13 +19,11 @@ export default function EventsScreen() {
   const navigateToJoinEvent = () => {
     router.push('/events/join');
   };
-  console.log('user tabs---------->', user);
 
-  // Show loading or redirect to login if no user
-  if (authLoading || !user) {
-    return null;
+  const handleLogout = async () => {
+    await signOut();
+    router.push('/login');
   }
-
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
@@ -50,6 +48,15 @@ export default function EventsScreen() {
         />
       </View>
 
+      <View>
+        <Button
+          title="Logout"
+          onPress={handleLogout}
+          icon={<Plus size={18} color="white" style={styles.buttonIcon} />}
+          iconPosition="left"
+          style={styles.createButton}
+        />
+      </View>
       <ScrollView style={styles.scrollView}>
         <Text style={styles.sectionTitle}>Your Events</Text>
 
@@ -66,9 +73,9 @@ export default function EventsScreen() {
           <View style={styles.eventsContainer}>
             {userEvents.map(event => (
               <EventCard
-                key={event.id}
+                key={event?.id}
                 event={event}
-                isOwner={event.owner_id === user.id}
+                isOwner={event?.owner_id === user.id}
               />
             ))}
           </View>

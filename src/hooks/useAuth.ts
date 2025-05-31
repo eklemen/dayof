@@ -69,6 +69,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Handle Firebase auth state changes
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
+      console.log('firebaseUser---------->', firebaseUser);
       if (firebaseUser) {
         // Get existing user data from secure storage
         let existingUserData = {};
