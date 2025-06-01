@@ -23,6 +23,7 @@ import {
   onSnapshot,
   Timestamp,
   serverTimestamp,
+  initializeFirestore,
 } from 'firebase/firestore';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
@@ -38,7 +39,6 @@ const firebaseConfig = {
   messagingSenderId: Constants.expoConfig?.extra?.firebaseSenderId,
   appId: Constants.expoConfig?.extra?.firebaseAppId,
 };
-console.log('firebaseConfig---------->', firebaseConfig);
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
 
@@ -59,7 +59,9 @@ if (!getApps().length) {
 }
 
 // Initialize Firestore
-const firestore = getFirestore(app);
+const firestore = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+});
 
 export {
   auth,

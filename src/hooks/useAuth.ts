@@ -1,21 +1,20 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
 import { User as FirebaseUser, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth/react-native';
-import { auth, FacebookAuthProvider } from '@/src/lib/firebase';
+import { auth, FacebookAuthProvider, firestore } from '@/src/lib/firebase';
 import * as WebBrowser from 'expo-web-browser';
 import * as Facebook from 'expo-auth-session/providers/facebook';
 import { makeRedirectUri } from 'expo-auth-session';
 import { router } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import Constants from 'expo-constants';
+import { doc, getDoc, serverTimestamp, setDoc } from 'firebase/firestore';
 
 WebBrowser.maybeCompleteAuthSession();
-console.log('Constants.expoConfig?.extra?.facebookAppId---------->', Constants.expoConfig?.extra?.facebookAppId);
 const redirectUri = Platform.select({
   web: makeRedirectUri({ useProxy: true }),
   default: `fb${Constants.expoConfig?.extra?.facebookAppId}://authorize`,
 });
-console.log('redirectUri---------->', redirectUri);
 // Define user type
 export interface User {
   id: string;
@@ -58,6 +57,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [facebookAccessToken, setFacebookAccessToken] = useState<string | null>(null);
 
+  // Function to create a user document in Firestore if it doesn't exist
+  const createUserDocIfNotExists = async () => {
+    const user = auth.currentUser;
+    if (!user) return;
+
+    const userDocRef = doc(firestore, 'users', user.uid);
+    const userDocSnap = await getDoc(userDocRef);
+
+    if (!userDocSnap.exists()) {
+      await setDoc(userDocRef, {
+        email: user.email,
+        displayName: user.displayName || '',
+        photoURL: user.photoURL || '',
+        createdAt: serverTimestamp(),
+        // add any custom fields here
+      });
+    }
+  };
+
   // Set up Facebook auth request
   const [request, response, promptAsync] = Facebook.useAuthRequest({
     clientId: FACEBOOK_APP_ID,
@@ -69,8 +87,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Handle Firebase auth state changes
   useEffect(() => {
     const unsubscribe = auth.onAuthStateChanged(async (firebaseUser) => {
-      console.log('firebaseUser---------->', firebaseUser);
       if (firebaseUser) {
+        // Create or update user document in Firestore
+        await createUserDocIfNotExists();
+
         // Get existing user data from secure storage
         let existingUserData = {};
         try {
@@ -147,10 +167,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Sign in to Firebase with the Facebook credential
       const result = await signInWithCredential(auth, credential);
-      console.log('result---------->', result);
       // User is signed in
       const firebaseUser = result.user;
 
+      // Create or update user document in Firestore
+      await createUserDocIfNotExists();
+
+      const userObj = {
+        id: firebaseUser.uid,
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName,
+          photoURL: firebaseUser.photoURL,
+          facebookAccessToken: token,
+      }
+      setUser(userObj);
       // Route based on the source of the login
       if (source === 'login') {
         // If logging in from the login page, go directly to the main app
@@ -162,13 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       return {
         success: true,
-        user: {
-          id: firebaseUser.uid,
-          email: firebaseUser.email,
-          displayName: firebaseUser.displayName,
-          photoURL: firebaseUser.photoURL,
-          facebookAccessToken: token,
-        },
+        user: userObj
       };
     } catch (error) {
       console.error('Firebase authentication error:', error);
@@ -223,9 +247,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
+      // Ensure user document exists in Firestore
+      await createUserDocIfNotExists();
+
       // In a real app, you would update the user profile in your database
-      // For now, we'll just update the local state
+      // Update the Firestore document with the new profile data
+      if (auth.currentUser) {
+        const userDocRef = doc(firestore, 'users', auth.currentUser.uid);
+        await setDoc(userDocRef, {
+          ...partial,
+          updatedAt: serverTimestamp(),
+        }, { merge: true });
+      }
+      console.log('userDocRef---------->', userDocRef);
+
+      // Update the local state
       const updatedUser = { ...user, ...partial };
+      console.log('updatedUser---------->', updatedUser);
       setUser(updatedUser);
       await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
 
@@ -239,6 +277,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Function to refresh user data
   const refreshUser = async () => {
     if (!auth.currentUser) return;
+
+    // Ensure user document exists in Firestore
+    await createUserDocIfNotExists();
 
     // In a real app, you would fetch the latest user data from your database
     // For now, we'll just use the current Firebase user and preserve any additional fields

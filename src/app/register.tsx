@@ -17,7 +17,6 @@ export default function RegisterScreen() {
     setLoading(true);
     setError(null);
     const { user } = await signInWithFacebook('register');
-    console.log('user---------->', user);
     setLoading(false);
   };
 

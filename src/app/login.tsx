@@ -19,7 +19,6 @@ export default function LoginScreen() {
     setError(null);
     try {
       const { user } = await signInWithFacebook('login');
-      console.log('user from login page---------->', user);
     } catch (err) {
       setError('Failed to login with Facebook');
     } finally {

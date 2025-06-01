@@ -18,8 +18,6 @@ export default function SplashScreenComponent() {
         // If auth is still loading, wait for it
         if (loading) return;
 
-        console.log('loading---------->', loading);
-        console.log('user---------->', user);
         // If we have a user, check if we need to refresh the token
         if (user) {
           // Firebase handles token refresh automatically, but we can

@@ -22,8 +22,30 @@ export async function getEventsForUser(userId: string) {
   );
 
   const snapshot = await getDocs(q);
-  const events = snapshot.docs.map((doc) => doc.ref.parent.parent?.id);
-  return events.filter(Boolean) as string[];
+  const eventIds = snapshot.docs.map((doc) => doc.ref.parent.parent?.id);
+  const filteredEventIds = eventIds.filter(Boolean) as string[];
+
+  // If no events found, return empty array
+  if (filteredEventIds.length === 0) {
+    return [];
+  }
+
+  // Fetch the complete event objects using the event IDs
+  const eventPromises = filteredEventIds.map(async (eventId) => {
+    const eventDoc = await getDoc(doc(firestore, 'events', eventId));
+    if (eventDoc.exists()) {
+      return {
+        id: eventDoc.id,
+        ...eventDoc.data()
+      };
+    }
+    return null;
+  });
+
+  const events = await Promise.all(eventPromises);
+
+  // Filter out any null values (events that might have been deleted)
+  return events.filter(Boolean);
 }
 
 // 2. Get all users in a room/event
