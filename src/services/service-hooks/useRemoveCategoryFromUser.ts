@@ -1,4 +1,4 @@
-import { removeCategoryFromUser } from '@/src/app/services/firestoreQueries';
+import { removeCategoryFromUser } from '@/src/services/firestoreQueries';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useRemoveCategoryFromUser() {

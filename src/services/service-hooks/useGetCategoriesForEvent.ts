@@ -1,4 +1,4 @@
-import { getCategoriesForEvent } from '@/src/app/services/firestoreQueries';
+import { getCategoriesForEvent } from '@/src/services/firestoreQueries';
 import { useQuery } from '@tanstack/react-query';
 
 export function useGetCategoriesForEvent(eventId: string) {

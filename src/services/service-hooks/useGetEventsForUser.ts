@@ -1,4 +1,4 @@
-import { getEventsForUser } from '@/src/app/services/firestoreQueries';
+import { getEventsForUser } from '@/src/services/firestoreQueries';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/src/hooks/useAuth';
 

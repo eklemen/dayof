@@ -7,6 +7,8 @@ import { COLORS } from '@/src/lib/constants';
 import { Text, TouchableOpacity, View } from 'react-native';
 import '@/src/styles/global.css'
 import { AuthProvider } from '@/src/hooks/useAuth';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+const queryClient = new QueryClient()
 
 export default function RootLayout() {
   // Keep the framework ready hook
@@ -38,33 +40,35 @@ export default function RootLayout() {
   }
 
   return (
-    <AuthProvider>
-      <>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-            contentStyle: { backgroundColor: COLORS.gray[50] },
-          }}
-        >
-          <Stack.Screen name="login" options={{ headerShown: false }} />
-          <Stack.Screen name="register" options={{ headerShown: false }} />
-          <Stack.Screen name="enrollment-info" options={{ headerShown: false }} />
-          <Stack.Screen name="events/[id]" options={{ headerShown: false, headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()}>
-                <Text>{`<`}</Text>
-              </TouchableOpacity>
-            ), }} />
-          <Stack.Screen name="events/create" options={{ headerShown: false, headerLeft: () => (
-              <TouchableOpacity onPress={() => router.back()}>
-                <Text>{`<`}</Text>
-              </TouchableOpacity>
-            ), }} />
-          <Stack.Screen name="events/join" options={{ headerShown: false }} />
-          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-          <Stack.Screen name="+not-found" />
-        </Stack>
-        <StatusBar style="auto" />
-      </>
-    </AuthProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <>
+          <Stack
+            screenOptions={{
+              headerShown: false,
+              contentStyle: { backgroundColor: COLORS.gray[50] },
+            }}
+          >
+            <Stack.Screen name="login" options={{ headerShown: false }} />
+            <Stack.Screen name="register" options={{ headerShown: false }} />
+            <Stack.Screen name="enrollment-info" options={{ headerShown: false }} />
+            <Stack.Screen name="events/[id]" options={{ headerShown: false, headerLeft: () => (
+                <TouchableOpacity onPress={() => router.back()}>
+                  <Text>{`<`}</Text>
+                </TouchableOpacity>
+              ), }} />
+            <Stack.Screen name="events/create" options={{ headerShown: false, headerLeft: () => (
+                <TouchableOpacity onPress={() => router.back()}>
+                  <Text>{`<`}</Text>
+                </TouchableOpacity>
+              ), }} />
+            <Stack.Screen name="events/join" options={{ headerShown: false }} />
+            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+            <Stack.Screen name="+not-found" />
+          </Stack>
+          <StatusBar style="auto" />
+        </>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

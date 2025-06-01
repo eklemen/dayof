@@ -1,4 +1,4 @@
-import { getRootMessages } from '@/src/app/services/firestoreQueries';
+import { getRootMessages } from '@/src/services/firestoreQueries';
 import { useQuery } from '@tanstack/react-query';
 
 export function useGetRootMessages(conversationId: string) {

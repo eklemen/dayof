@@ -1,4 +1,4 @@
-import { getUserForCategory } from '@/src/app/services/firestoreQueries';
+import { getUserForCategory } from '@/src/services/firestoreQueries';
 import { useQuery } from '@tanstack/react-query';
 
 export function useGetUserForCategory(eventId: string, categoryId: string) {

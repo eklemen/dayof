@@ -1,4 +1,4 @@
-import { getUsersInEvent } from '@/src/app/services/firestoreQueries';
+import { getUsersInEvent } from '@/src/services/firestoreQueries';
 import { useQuery } from '@tanstack/react-query';
 
 export function useGetUsersInEvent(eventId: string) {

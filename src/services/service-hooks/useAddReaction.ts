@@ -1,4 +1,4 @@
-import { addReaction } from '@/src/app/services/firestoreQueries';
+import { addReaction } from '@/src/services/firestoreQueries';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useAddReaction() {

@@ -1,4 +1,4 @@
-import { removeReaction } from '@/src/app/services/firestoreQueries';
+import { removeReaction } from '@/src/services/firestoreQueries';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useRemoveReaction() {

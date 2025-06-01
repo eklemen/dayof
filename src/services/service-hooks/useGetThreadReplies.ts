@@ -1,4 +1,4 @@
-import { getThreadReplies } from '@/src/app/services/firestoreQueries';
+import { getThreadReplies } from '@/src/services/firestoreQueries';
 import { useQuery } from '@tanstack/react-query';
 
 export function useGetThreadReplies(conversationId: string, rootMessageId: string) {

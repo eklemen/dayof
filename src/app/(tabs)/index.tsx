@@ -7,11 +7,14 @@ import { EventCard } from '@/src/components/ui/EventCard';
 import { Button } from '@/src/components/ui/Button';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useEvents } from '@/src/hooks/useEvents';
+import { useGetEventsForUser } from '@/src/services/service-hooks/useGetEventsForUser';
 
 export default function EventsScreen() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { userEvents, loading: eventsLoading, refreshEvents } = useEvents(user?.id);
-
+  const { data: events, isLoading: eventsLoading, error } = useGetEventsForUser();
+  console.log('error---------->', error);
+  console.log('eventsLoading---------->', eventsLoading);
+  console.log('events---------->', events);
   const navigateToCreateEvent = () => {
     router.push('/events/create');
   };
@@ -54,7 +57,7 @@ export default function EventsScreen() {
           onPress={handleLogout}
           icon={<Plus size={18} color="white" style={styles.buttonIcon} />}
           iconPosition="left"
-          style={styles.createButton}
+          style={styles.joinButton}
         />
       </View>
       <ScrollView style={styles.scrollView}>
@@ -62,7 +65,7 @@ export default function EventsScreen() {
 
         {eventsLoading ? (
           <Text style={styles.loadingText}>Loading events...</Text>
-        ) : userEvents.length === 0 ? (
+        ) : events?.length === 0 ? (
           <View style={styles.emptyState}>
             <Text style={styles.emptyTitle}>No events yet</Text>
             <Text style={styles.emptyDescription}>
@@ -71,7 +74,7 @@ export default function EventsScreen() {
           </View>
         ) : (
           <View style={styles.eventsContainer}>
-            {userEvents.map(event => (
+            {(events ?? []).map(event => (
               <EventCard
                 key={event?.id}
                 event={event}

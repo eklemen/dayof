@@ -1,4 +1,4 @@
-import { assignCategoryToUser } from '@/src/app/services/firestoreQueries';
+import { assignCategoryToUser } from '@/src/services/firestoreQueries';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 export function useAssignCategoryToUser() {
