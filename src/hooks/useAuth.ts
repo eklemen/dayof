@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { User as FirebaseUser, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth/react-native';
+import { User as FirebaseUser, signInWithCredential, signOut as firebaseSignOut } from 'firebase/auth';
 import { auth, FacebookAuthProvider, firestore } from '@/src/lib/firebase';
 import * as WebBrowser from 'expo-web-browser';
 import * as Facebook from 'expo-auth-session/providers/facebook';

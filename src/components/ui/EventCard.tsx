@@ -4,7 +4,7 @@ import { COLORS, SPACING } from '@/src/lib/constants';
 import { formatDate, isEventActive, isPastDate } from '@/src/lib/utils';
 import { Calendar, Users } from 'lucide-react-native';
 import { Card } from './Card';
-import { Event } from '@/src/hooks/useEvents';
+import { Event } from '@/src/models';
 
 interface EventCardProps {
   event: Event;
@@ -12,8 +12,8 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, isOwner }: EventCardProps) {
-  const isActive = isEventActive(event.end_date);
-  const isPast = isPastDate(event.end_date);
+  const isActive = isEventActive(event.endDate);
+  const isPast = isPastDate(event.endDate);
 
   const navigateToEvent = () => {
     router.push(`/events/${event.id}`);
@@ -24,7 +24,7 @@ export function EventCard({ event, isOwner }: EventCardProps) {
       <Card variant="elevated" style={styles.card}>
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={1}>
-            {event.event_name}
+            {event.eventName}
           </Text>
           {isOwner && (
             <View style={styles.ownerBadge}>
@@ -36,14 +36,14 @@ export function EventCard({ event, isOwner }: EventCardProps) {
         <View style={styles.infoRow}>
           <Calendar size={18} color={COLORS.gray[600]} />
           <Text style={styles.infoText}>
-            {formatDate(event.start_date)} - {formatDate(event.end_date)}
+            {formatDate(event.startDate)} - {formatDate(event.endDate)}
           </Text>
         </View>
 
         {event.venue_name && (
           <View style={styles.infoRow}>
             <Users size={18} color={COLORS.gray[600]} />
-            <Text style={styles.infoText}>{event.venue_name}</Text>
+            <Text style={styles.infoText}>{event.venueId}</Text>
           </View>
         )}
 

@@ -1,12 +1,12 @@
 // firebase.ts
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import {
-  getReactNativePersistence,
   initializeAuth,
   FacebookAuthProvider,
   getAuth,
   Auth,
-} from 'firebase/auth/react-native';
+  getReactNativePersistence
+} from 'firebase/auth';
 import {
   getFirestore,
   collection,
@@ -25,8 +25,9 @@ import {
   serverTimestamp,
   initializeFirestore,
 } from 'firebase/firestore';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import Constants from 'expo-constants';
+import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
+
 
 let app: FirebaseApp;
 let auth: Auth;
@@ -42,9 +43,9 @@ const firebaseConfig = {
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
 
-  // ✅ react-native persistence must be initialized explicitly
+  // ✅ initialize auth with browser local persistence
   auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(AsyncStorage),
+    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
   });
 } else {
   app = getApp();
@@ -53,7 +54,7 @@ if (!getApps().length) {
     auth = getAuth(app);
   } catch (e) {
     auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(AsyncStorage),
+      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
     });
   }
 }

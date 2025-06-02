@@ -78,7 +78,7 @@ export default function EventsScreen() {
               <EventCard
                 key={event?.id}
                 event={event}
-                isOwner={event?.owner_id === user.id}
+                isOwner={event?.ownerId === user.id}
               />
             ))}
           </View>
