@@ -11,6 +11,7 @@ export default {
     newArchEnabled: true,
     ios: {
       bundleIdentifier: 'com.anonymous.dayof',
+      googleServicesFile: './account-services/GoogleService-Info.plist',
       infoPlist: {
         CFBundleURLTypes: [
           {
@@ -30,6 +31,7 @@ export default {
     },
     android: {
       package: 'com.anonymous.dayof',
+      googleServicesFile: './account-services/google-services.json',
       intentFilters: [
         {
           action: 'VIEW',
@@ -52,6 +54,17 @@ export default {
       'expo-font',
       'expo-web-browser',
       'expo-secure-store',
+      '@react-native-firebase/app',
+      '@react-native-firebase/auth',
+      '@react-native-firebase/crashlytics',
+      [
+        'expo-build-properties',
+        {
+          'ios': {
+            'useFrameworks': 'static'
+          }
+        }
+      ]
     ],
     experiments: {
       typedRoutes: true

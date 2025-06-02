@@ -36,3 +36,4 @@ yarn-error.*
 ios/
 android/
 serviceAccount.json
+account-services/*
