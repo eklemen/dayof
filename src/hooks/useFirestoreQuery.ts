@@ -1,5 +1,4 @@
 import { useQuery } from '@tanstack/react-query';
-import { collection, onSnapshot, query } from 'firebase/firestore';
 import { firestore } from '@/src/lib/firebase'
 
 function useFirestoreCollection(path: string) {
@@ -8,15 +7,15 @@ function useFirestoreCollection(path: string) {
       queryKey: ['firestore', path],
       queryFn: () =>
         new Promise((resolve, reject) => {
-          const q = query(collection(firestore, path));
-          const unsubscribe = onSnapshot(
-            q,
-            (snapshot) => {
-              const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-              resolve(data);
-            },
-            (error) => reject(error)
-          );
+          const unsubscribe = firestore()
+            .collection(path)
+            .onSnapshot(
+              (snapshot) => {
+                const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                resolve(data);
+              },
+              (error) => reject(error)
+            );
 
           // Cleanup subscription on unmount
           return unsubscribe;

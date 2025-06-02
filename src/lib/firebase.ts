@@ -1,85 +1,49 @@
 // firebase.ts
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import {
-  initializeAuth,
-  FacebookAuthProvider,
-  getAuth,
-  Auth,
-  getReactNativePersistence
-} from 'firebase/auth';
-import {
-  getFirestore,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  Timestamp,
-  serverTimestamp,
-  initializeFirestore,
-} from 'firebase/firestore';
+import firebase from '@react-native-firebase/app';
+import auth from '@react-native-firebase/auth';
+import firestore from '@react-native-firebase/firestore';
 import Constants from 'expo-constants';
-import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 
+// Initialize Firebase if it hasn't been initialized yet
+if (!firebase.apps.length) {
+  const firebaseConfig = {
+    apiKey: Constants.expoConfig?.extra?.firebaseApiKey,
+    authDomain: Constants.expoConfig?.extra?.firebaseAuthDomain,
+    projectId: Constants.expoConfig?.extra?.firebaseProjectId,
+    storageBucket: Constants.expoConfig?.extra?.firebaseStorageBucket,
+    messagingSenderId: Constants.expoConfig?.extra?.firebaseSenderId,
+    appId: Constants.expoConfig?.extra?.firebaseAppId,
+  };
 
-let app: FirebaseApp;
-let auth: Auth;
-
-const firebaseConfig = {
-  apiKey: Constants.expoConfig?.extra?.firebaseApiKey,
-  authDomain: Constants.expoConfig?.extra?.firebaseAuthDomain,
-  projectId: Constants.expoConfig?.extra?.firebaseProjectId,
-  storageBucket: Constants.expoConfig?.extra?.firebaseStorageBucket,
-  messagingSenderId: Constants.expoConfig?.extra?.firebaseSenderId,
-  appId: Constants.expoConfig?.extra?.firebaseAppId,
-};
-if (!getApps().length) {
-  app = initializeApp(firebaseConfig);
-
-  // ✅ initialize auth with browser local persistence
-  auth = initializeAuth(app, {
-    persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-  });
-} else {
-  app = getApp();
-  // 👇 safely fallback if already initialized
-  try {
-    auth = getAuth(app);
-  } catch (e) {
-    auth = initializeAuth(app, {
-      persistence: getReactNativePersistence(ReactNativeAsyncStorage),
-    });
-  }
+  firebase.initializeApp(firebaseConfig)
+    .catch(err => console.log('Error initializing firebase app: ', err));
 }
 
-// Initialize Firestore
-const firestore = initializeFirestore(app, {
-  experimentalForceLongPolling: true,
-});
+// Enable Firestore persistence (optional)
+firestore().settings({
+  persistence: true,
+}).catch(err => console.log('Error configuring additional settings for firebase app: ', err));
 
-export {
-  auth,
-  firestore,
-  FacebookAuthProvider,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  Timestamp,
-  serverTimestamp
-};
+// Export the firebase modules
+export { firebase, auth, firestore };
+
+// Export Facebook Auth Provider
+export const FacebookAuthProvider = auth.FacebookAuthProvider;
+//
+// // Export Firestore utility functions
+// export const {
+//   collection,
+//   doc,
+//   getDoc,
+//   getDocs,
+//   setDoc,
+//   addDoc,
+//   updateDoc,
+//   deleteDoc,
+//   query,
+//   where,
+//   orderBy,
+//   onSnapshot,
+//   Timestamp,
+//   serverTimestamp
+// } = firestore;
