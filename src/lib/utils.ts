@@ -9,7 +9,7 @@ export function generateGroupCode(length = 8): string {
 }
 
 // Format date for display
-export function formatDate(date: string | Date): string {
+export function formatDate(date?: string | Date): string {
   if (!date) return '';
   return format(new Date(date), 'MMM d, yyyy');
 }
@@ -25,13 +25,13 @@ export function formatDateTime(date: string | Date): string {
 }
 
 // Check if a date is in the past
-export function isPastDate(date: string | Date): boolean {
+export function isPastDate(date?: string | Date): boolean {
   if (!date) { return false; }
   return new Date(date) < new Date();
 }
 
 // Check if an event is active
-export function isEventActive(endDate: string | Date): boolean {
+export function isEventActive(endDate?: string | Date): boolean {
   if (!endDate) { return false; }
   const end = new Date(endDate);
   end.setDate(end.getDate() + 14); // Active until 14 days after end date

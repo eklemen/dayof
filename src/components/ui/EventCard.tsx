@@ -12,11 +12,12 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, isOwner }: EventCardProps) {
+  event.ll
   const isActive = isEventActive(event.endDate);
   const isPast = isPastDate(event.endDate);
 
   const navigateToEvent = () => {
-    router.push(`/events/${event.id}`);
+    router.push(`/events/${event.eventId}`);
   };
 
   return (
@@ -40,7 +41,7 @@ export function EventCard({ event, isOwner }: EventCardProps) {
           </Text>
         </View>
 
-        {event.venue_name && (
+        {event.venue.venueName && (
           <View style={styles.infoRow}>
             <Users size={18} color={COLORS.gray[600]} />
             <Text style={styles.infoText}>{event.venueId}</Text>
@@ -59,10 +60,6 @@ export function EventCard({ event, isOwner }: EventCardProps) {
               {isPast ? 'Past' : isActive ? 'Active' : 'Upcoming'}
             </Text>
           </View>
-
-          <Text style={styles.codeText}>
-            Code: <Text style={styles.codeHighlight}>{event.group_code}</Text>
-          </Text>
         </View>
       </Card>
     </TouchableOpacity>

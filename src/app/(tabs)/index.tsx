@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
+import { StyleSheet, View, Text, ScrollView } from 'react-native';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Plus, LogIn } from 'lucide-react-native';
@@ -6,15 +6,12 @@ import { COLORS, SPACING, APP_NAME } from '@/src/lib/constants';
 import { EventCard } from '@/src/components/ui/EventCard';
 import { Button } from '@/src/components/ui/Button';
 import { useAuth } from '@/src/hooks/useAuth';
-import { useEvents } from '@/src/hooks/useEvents';
 import { useGetEventsForUser } from '@/src/services/service-hooks/useGetEventsForUser';
 
 export default function EventsScreen() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { data: events, isLoading: eventsLoading, error } = useGetEventsForUser();
-  console.log('error---------->', error);
-  console.log('eventsLoading---------->', eventsLoading);
-  console.log('events---------->', events);
+  console.log('events---------->', JSON.stringify(events, null, 2));
   const navigateToCreateEvent = () => {
     router.push('/events/create');
   };

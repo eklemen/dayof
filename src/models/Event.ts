@@ -3,6 +3,6 @@ export interface Event {
   eventName: string;
   ownerId: string;
   venueId?: string;
-  startDate?: string; // ISO date
-  endDate?: string;   // ISO date
+  startDate?: string | Date; // ISO date
+  endDate?: string | Date;   // ISO date
 }

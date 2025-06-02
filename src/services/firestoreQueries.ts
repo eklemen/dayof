@@ -14,6 +14,20 @@ import {
 } from "firebase/firestore";
 import { firestore } from '@/src/lib/firebase';
 
+// Helper function to get venue details by ID
+async function getVenueById(venueId: string) {
+  if (!venueId) return null;
+
+  const venueDoc = await getDoc(doc(firestore, 'venues', venueId));
+  if (venueDoc.exists()) {
+    return {
+      id: venueDoc.id,
+      ...venueDoc.data()
+    };
+  }
+  return null;
+}
+
 // 1. Get all events for a user (via membership)
 export async function getEventsForUser(userId: string) {
   const q = query(
@@ -34,9 +48,18 @@ export async function getEventsForUser(userId: string) {
   const eventPromises = filteredEventIds.map(async (eventId) => {
     const eventDoc = await getDoc(doc(firestore, 'events', eventId));
     if (eventDoc.exists()) {
+      const eventData = eventDoc.data();
+
+      // Fetch venue details if venueId exists
+      let venue = null;
+      if (eventData.venueId) {
+        venue = await getVenueById(eventData.venueId);
+      }
+
       return {
         id: eventDoc.id,
-        ...eventDoc.data()
+        ...eventData,
+        venue // Include the full venue object
       };
     }
     return null;
