@@ -12,12 +12,15 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, isOwner }: EventCardProps) {
-  event.ll
-  const isActive = isEventActive(event.endDate);
-  const isPast = isPastDate(event.endDate);
+  console.log('event---------->', event);
+  // const isActive = isEventActive(event.endDate);
+  // const isPast = isPastDate(event.endDate);
+  const isActive = true;
+  const isPast = false;
 
+  debugger
   const navigateToEvent = () => {
-    router.push(`/events/${event.eventId}`);
+    router.push(`/events/${event.id}`);
   };
 
   return (
@@ -25,7 +28,7 @@ export function EventCard({ event, isOwner }: EventCardProps) {
       <Card variant="elevated" style={styles.card}>
         <View style={styles.header}>
           <Text style={styles.title} numberOfLines={1}>
-            {event.eventName}
+            {event?.eventName}
           </Text>
           {isOwner && (
             <View style={styles.ownerBadge}>
@@ -37,14 +40,15 @@ export function EventCard({ event, isOwner }: EventCardProps) {
         <View style={styles.infoRow}>
           <Calendar size={18} color={COLORS.gray[600]} />
           <Text style={styles.infoText}>
-            {formatDate(event.startDate)} - {formatDate(event.endDate)}
+            dates go here
+            {/*{formatDate(event.startDate)} - {formatDate(event.endDate)}*/}
           </Text>
         </View>
 
         {event.venue.venueName && (
           <View style={styles.infoRow}>
             <Users size={18} color={COLORS.gray[600]} />
-            <Text style={styles.infoText}>{event.venueId}</Text>
+            <Text style={styles.infoText}>{event.venue.venueName}</Text>
           </View>
         )}
 

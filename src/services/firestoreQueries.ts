@@ -3,55 +3,54 @@ import { firestore } from '@/src/lib/firebase';
 // Helper function to get venue details by ID
 async function getVenueById(venueId: string) {
   if (!venueId) return null;
-
-  const venueDoc = await firestore().collection('venues').doc(venueId).get();
-  if (venueDoc.exists()) {
-    return {
-      id: venueDoc.id,
-      ...venueDoc.data()
-    };
+  const venueDoc = await firestore().collection("venues").doc(venueId).get();
+  if (venueDoc.exists) {
+    return { id: venueDoc.id, ...venueDoc.data() };
+  } else {
+    return null;
   }
-  return null;
 }
 
 // 1. Get all events for a user (via membership)
 export async function getEventsForUser(userId: string) {
-  const q = firestore().collectionGroup("members").where("userId", "==", userId);
+  // 1. Find all the membership documents for this user
+  const q = firestore()
+    .collectionGroup("members")
+    .where("userId", "==", userId);
 
   const snapshot = await q.get();
-  const eventIds = snapshot.docs.map((doc) => doc.ref.parent.parent?.id);
-  const filteredEventIds = eventIds.filter(Boolean) as string[];
+  const eventIds = snapshot.docs
+    .map((docSnap) => docSnap.ref.parent.parent?.id)
+    .filter(Boolean) as string[];
 
-  // If no events found, return empty array
-  if (filteredEventIds.length === 0) {
-    return [];
-  }
+  if (eventIds.length === 0) return [];
 
-  // Fetch the complete event objects using the event IDs
-  const eventPromises = filteredEventIds.map(async (eventId) => {
-    const eventDoc = await firestore().collection('events').doc(eventId).get();
-    if (eventDoc.exists()) {
-      const eventData = eventDoc.data();
+  // 2. Fetch each event and its venue details
+  const eventPromises = eventIds.map(async (eventId) => {
+    const eventDocSnap = await firestore()
+      .collection("events")
+      .doc(eventId)
+      .get();
 
-      // Fetch venue details if venueId exists
-      let venue = null;
-      if (eventData?.venueId) {
-        venue = await getVenueById(eventData.venueId);
-      }
+    if (!eventDocSnap.exists) return null;
+    const eventData = eventDocSnap.data()!;
 
-      return {
-        id: eventDoc.id,
-        ...eventData,
-        venue // Include the full venue object
-      };
+    // eventData.venueId is a DocumentReference, so do `.id`
+    let fullVenue = null;
+    if (eventData.venueId) {
+      const venueRef = eventData.venueId as FirebaseFirestoreTypes.DocumentReference;
+      fullVenue = await getVenueById(venueRef.id);
     }
-    return null;
+
+    return {
+      id: eventDocSnap.id,
+      ...eventData,
+      venue: fullVenue,
+    };
   });
 
   const events = await Promise.all(eventPromises);
-
-  // Filter out any null values (events that might have been deleted)
-  return events.filter(Boolean);
+  return events.filter((e) => e !== null);
 }
 
 // 2. Get all users in a room/event
