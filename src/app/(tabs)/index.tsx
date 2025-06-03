@@ -73,9 +73,9 @@ export default function EventsScreen() {
           <View style={styles.eventsContainer}>
             {(events ?? []).map(event => (
               <EventCard
-                key={event?.id}
+                key={event?.eventId}
                 event={event}
-                isOwner={event?.ownerId === user.id}
+                isOwner={event?.ownerId === user?.id}
               />
             ))}
           </View>

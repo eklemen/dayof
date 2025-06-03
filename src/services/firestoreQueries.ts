@@ -69,7 +69,7 @@ export async function getEventsForUser(userId: string) {
     }
 
     return {
-      id: eventDocSnap.id,
+      eventId: eventDocSnap.id,
       eventName: eventData.eventName,
       ownerId: (eventData.ownerId as FirebaseFirestoreTypes.DocumentReference).id,
       venueId: (eventData.venueId as FirebaseFirestoreTypes.DocumentReference).id,
@@ -256,7 +256,7 @@ export async function getEvent(eventId: string) {
   }
 
   return {
-    id: eventDoc.id,
+    eventId: eventDoc.id,
     eventName: eventData.eventName,
     ownerId: (eventData.ownerId as FirebaseFirestoreTypes.DocumentReference).id,
     venueId: eventData.venueId ? (eventData.venueId as FirebaseFirestoreTypes.DocumentReference).id : null,

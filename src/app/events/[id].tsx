@@ -16,6 +16,8 @@ export default function EventDetailScreen() {
   console.log('id---------->', id);
   const eventId = Array.isArray(id) ? id[0] : id || '';
   const { data: event, isLoading: loading, error } = useGetEvent(eventId);
+  
+  console.log('Event data:', { event, loading, error, eventId });
 
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [threadParentId, setThreadParentId] = useState<string | null>(null);
@@ -31,10 +33,24 @@ export default function EventDetailScreen() {
     setThreadParentId(null);
   };
 
-  if (loading || !event) {
+  if (loading) {
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <Text>Loading event details...</Text>
+      </SafeAreaView>
+    );
+  }
+
+  if (error || !event) {
+    return (
+      <SafeAreaView style={styles.loadingContainer}>
+        <Text>Event not found</Text>
+        <TouchableOpacity 
+          style={{ marginTop: 16, padding: 12, backgroundColor: COLORS.primary[700], borderRadius: 8 }}
+          onPress={() => router.back()}
+        >
+          <Text style={{ color: 'white', textAlign: 'center' }}>Go Back</Text>
+        </TouchableOpacity>
       </SafeAreaView>
     );
   }
