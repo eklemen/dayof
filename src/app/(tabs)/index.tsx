@@ -7,20 +7,10 @@ import { EventCard } from '@/src/components/ui/EventCard';
 import { Button } from '@/src/components/ui/Button';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useGetEventsForUser } from '@/src/services/service-hooks/useGetEventsForUser';
-import { useQuery } from '@tanstack/react-query';
-import { getEventsForUser } from '@/src/services/firestoreQueries';
 
 export default function EventsScreen() {
   const { user, loading: authLoading, signOut } = useAuth();
-  const { data: events, isLoading: eventsLoading, error } = useQuery({
-    queryKey: ['events'],
-    enabled: !!user?.id,
-    queryFn: () => getEventsForUser(user!.id),
-    staleTime: 5 * 60 * 1000, // cache for 5 minutes
-    onSuccess(data) {
-      console.log('onSuccess---------->', data);
-    }
-  });
+  const { data: events, isLoading: eventsLoading, error } = useGetEventsForUser();
   console.log('events (tabs)---------->', events);
   const navigateToCreateEvent = () => {
     router.push('/events/create');

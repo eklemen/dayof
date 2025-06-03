@@ -12,15 +12,11 @@ interface EventCardProps {
 }
 
 export function EventCard({ event, isOwner }: EventCardProps) {
-  console.log('event---------->', event);
-  // const isActive = isEventActive(event.endDate);
-  // const isPast = isPastDate(event.endDate);
-  const isActive = true;
-  const isPast = false;
+  const isActive = isEventActive(event?.startDate);
+  const isPast = isPastDate(event?.startDate);
 
-  debugger
   const navigateToEvent = () => {
-    router.push(`/events/${event.id}`);
+    router.push(`/events/${event.eventId}`);
   };
 
   return (
@@ -40,12 +36,11 @@ export function EventCard({ event, isOwner }: EventCardProps) {
         <View style={styles.infoRow}>
           <Calendar size={18} color={COLORS.gray[600]} />
           <Text style={styles.infoText}>
-            dates go here
-            {/*{formatDate(event.startDate)} - {formatDate(event.endDate)}*/}
+            {formatDate(event?.startDate)}
           </Text>
         </View>
 
-        {event.venue.venueName && (
+        {event?.venue?.venueName && (
           <View style={styles.infoRow}>
             <Users size={18} color={COLORS.gray[600]} />
             <Text style={styles.infoText}>{event.venue.venueName}</Text>

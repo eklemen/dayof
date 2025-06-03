@@ -1,10 +1,11 @@
 import { firestore } from '@/src/lib/firebase';
+import type { FirebaseFirestoreTypes } from '@react-native-firebase/firestore';
 
 // Helper function to get venue details by ID
 async function getVenueById(venueId: string) {
   if (!venueId) return null;
   const venueDoc = await firestore().collection("venues").doc(venueId).get();
-  if (venueDoc.exists) {
+  if (venueDoc.exists()) {
     return { id: venueDoc.id, ...venueDoc.data() };
   } else {
     return null;
@@ -15,8 +16,8 @@ async function getVenueById(venueId: string) {
 export async function getEventsForUser(userId: string) {
   // 1. Find all the membership documents for this user
   const q = firestore()
-    .collectionGroup("members")
-    .where("userId", "==", userId);
+    .collectionGroup('members')
+    .where('userId', '==', userId);
 
   const snapshot = await q.get();
   const eventIds = snapshot.docs
@@ -28,12 +29,20 @@ export async function getEventsForUser(userId: string) {
   // 2. Fetch each event and its venue details
   const eventPromises = eventIds.map(async (eventId) => {
     const eventDocSnap = await firestore()
-      .collection("events")
+      .collection('events')
       .doc(eventId)
       .get();
 
     if (!eventDocSnap.exists) return null;
     const eventData = eventDocSnap.data()!;
+
+    // Convert Firestore Timestamp → JS Date
+    const startDate: Date | null = eventData.startDate
+      ? (eventData.startDate as FirebaseFirestoreTypes.Timestamp).toDate()
+      : null;
+    const endDate: Date | null = eventData.endDate
+      ? (eventData.endDate as FirebaseFirestoreTypes.Timestamp).toDate()
+      : null;
 
     // eventData.venueId is a DocumentReference, so do `.id`
     let fullVenue = null;
@@ -44,8 +53,12 @@ export async function getEventsForUser(userId: string) {
 
     return {
       id: eventDocSnap.id,
-      ...eventData,
-      venue: fullVenue,
+      eventName: eventData.eventName,
+      ownerId: (eventData.ownerId as FirebaseFirestoreTypes.DocumentReference).id,
+      venueId: (eventData.venueId as FirebaseFirestoreTypes.DocumentReference).id,
+      startDate,
+      endDate,
+      venue: fullVenue,  // full venue object or null
     };
   });
 

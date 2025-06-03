@@ -10,8 +10,5 @@ export function useGetEventsForUser() {
     enabled: !!user?.id,
     queryFn: () => getEventsForUser(user!.id),
     staleTime: 5 * 60 * 1000, // cache for 5 minutes
-    onSuccess(data) {
-      console.log('onSuccess---------->', data);
-    }
   });
 }

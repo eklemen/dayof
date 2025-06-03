@@ -14,6 +14,7 @@ type Tab = 'chat' | 'vendors';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
+  console.log('id---------->', id);
   const eventId = Array.isArray(id) ? id[0] : id || '';
   const { getEvent } = useEvents();
   const { user } = useAuth();

@@ -37,3 +37,5 @@ ios/
 android/
 serviceAccount.json
 account-services/*
+.claude/
+*.log
