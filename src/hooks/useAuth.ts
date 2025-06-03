@@ -88,9 +88,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        // Create or update user document in Firestore
-        await createUserDocIfNotExists();
-
         // Get existing user data from secure storage
         let existingUserData = {};
         try {
@@ -170,8 +167,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // User is signed in
       const firebaseUser = result.user;
 
-      // Create or update user document in Firestore
-      await createUserDocIfNotExists();
+      // Check if user document already exists in Firestore
+      const db = getFirestore();
+      const userDocRef = doc(db, 'users', firebaseUser.uid);
+      const userDocSnap = await getDoc(userDocRef);
+      
+      const isNewUser = !userDocSnap.exists();
+
+      // If user doesn't exist, create the document
+      if (isNewUser) {
+        await setDoc(userDocRef, {
+          email: firebaseUser.email,
+          displayName: firebaseUser.displayName || '',
+          photoURL: firebaseUser.photoURL || '',
+          createdAt: serverTimestamp(),
+        });
+      }
 
       const userObj = {
         id: firebaseUser.uid,
@@ -181,13 +192,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         facebookAccessToken: token,
       }
       setUser(userObj);
-      // Route based on the source of the login
-      if (source === 'login') {
-        // If logging in from the login page, go directly to the main app
-        router.replace('/(tabs)');
-      } else {
-        // If registering from the register page, go to enrollment info
+      
+      // Route based on whether user is new or existing
+      if (isNewUser) {
+        // First time logging in - go to enrollment info
         router.replace('/enrollment-info');
+      } else {
+        // Existing user - go directly to main app
+        router.replace('/(tabs)');
       }
 
       return {
@@ -247,8 +259,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      // Ensure user document exists in Firestore
-      await createUserDocIfNotExists();
+      // Ensure user document exists in Firestore (for legacy calls)
+      if (auth().currentUser) {
+        const db = getFirestore();
+        const userDocRef = doc(db, 'users', auth().currentUser.uid);
+        const userDocSnap = await getDoc(userDocRef);
+
+        if (!userDocSnap.exists()) {
+          await setDoc(userDocRef, {
+            email: auth().currentUser.email,
+            displayName: auth().currentUser.displayName || '',
+            photoURL: auth().currentUser.photoURL || '',
+            createdAt: serverTimestamp(),
+          });
+        }
+      }
 
       // In a real app, you would update the user profile in your database
       // Update the Firestore document with the new profile data
@@ -278,9 +303,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // Function to refresh user data
   const refreshUser = async () => {
     if (!auth().currentUser) return;
-
-    // Ensure user document exists in Firestore
-    await createUserDocIfNotExists();
 
     // In a real app, you would fetch the latest user data from your database
     // For now, we'll just use the current Firebase user and preserve any additional fields
