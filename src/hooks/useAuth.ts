@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Platform } from 'react-native';
-import { firebase, auth, firestore, FacebookAuthProvider } from '@/src/lib/firebase';
+import auth from '@react-native-firebase/auth';
+import { getFirestore, doc, getDoc, setDoc, serverTimestamp } from '@react-native-firebase/firestore';
 import * as WebBrowser from 'expo-web-browser';
 import * as Facebook from 'expo-auth-session/providers/facebook';
 import { makeRedirectUri } from 'expo-auth-session';
@@ -59,16 +60,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const createUserDocIfNotExists = async () => {
     const user = auth().currentUser;
     if (!user) return;
+    
+    const db = getFirestore();
+    const userDocRef = doc(db, 'users', user.uid);
+    const userDocSnap = await getDoc(userDocRef);
 
-    const userDocRef = firestore().collection('users').doc(user.uid);
-    const userDocSnap = await userDocRef.get();
-
-    if (!userDocSnap.exists) {
-      await userDocRef.set({
+    if (!userDocSnap.exists()) {
+      await setDoc(userDocRef, {
         email: user.email,
         displayName: user.displayName || '',
         photoURL: user.photoURL || '',
-        createdAt: firestore.FieldValue.serverTimestamp(),
+        createdAt: serverTimestamp(),
         // add any custom fields here
       });
     }
@@ -251,10 +253,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // In a real app, you would update the user profile in your database
       // Update the Firestore document with the new profile data
       if (auth().currentUser) {
-        const userDocRef = firestore().collection('users').doc(auth().currentUser.uid);
-        await userDocRef.set({
+        const db = getFirestore();
+        const userDocRef = doc(db, 'users', auth().currentUser.uid);
+        await setDoc(userDocRef, {
           ...partial,
-          updatedAt: firestore.FieldValue.serverTimestamp(),
+          updatedAt: serverTimestamp(),
         }, { merge: true });
       }
       console.log('userDocRef updated');

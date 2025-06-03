@@ -1,7 +1,7 @@
 // firebase.ts
 import firebase from '@react-native-firebase/app';
 import auth from '@react-native-firebase/auth';
-import firestore from '@react-native-firebase/firestore';
+import firestore, { getFirestore } from '@react-native-firebase/firestore';
 import Constants from 'expo-constants';
 
 // Initialize Firebase if it hasn't been initialized yet
@@ -20,9 +20,13 @@ if (!firebase.apps.length) {
 }
 
 // Enable Firestore persistence (optional)
-firestore().settings({
-  persistence: true,
-}).catch(err => console.log('Error configuring additional settings for firebase app: ', err));
+try {
+  const db = getFirestore();
+  // Note: In v22+, persistence settings are configured differently
+  // This may need adjustment based on your specific needs
+} catch (err) {
+  console.log('Error configuring additional settings for firebase app: ', err);
+}
 
 // Export the firebase modules
 export { firebase, auth, firestore };

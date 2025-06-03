@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import {
-  firestore,
+  getFirestore,
   collection,
   doc,
   getDoc,
@@ -14,7 +14,7 @@ import {
   onSnapshot,
   Timestamp,
   serverTimestamp
-} from '@/src/lib/firebase';
+} from '@react-native-firebase/firestore';
 import { Message } from '@/src/models/Message';
 
 export function useMessages(eventId?: string) {
@@ -37,19 +37,20 @@ export function useMessages(eventId?: string) {
   const fetchMessages = async (eventId: string, parentMessageId: string | null = null) => {
     try {
       setLoading(true);
+      const db = getFirestore();
 
       // Create query based on whether we're fetching top-level messages or replies
       let messagesQuery;
       if (parentMessageId === null) {
         messagesQuery = query(
-          collection(firestore, 'messages'),
+          collection(db, 'messages'),
           where('eventId', '==', eventId),
           where('parentMessageId', '==', null),
           orderBy('createdAt', 'desc')
         );
       } else {
         messagesQuery = query(
-          collection(firestore, 'messages'),
+          collection(db, 'messages'),
           where('eventId', '==', eventId),
           where('parentMessageId', '==', parentMessageId),
           orderBy('createdAt', 'desc')
@@ -67,7 +68,7 @@ export function useMessages(eventId?: string) {
       const messagesWithAuthors = await Promise.all(
         messagesSnapshot.docs.map(async (messageDoc) => {
           const messageData = messageDoc.data();
-          const authorDoc = await getDoc(doc(firestore, 'users', messageData.authorId));
+          const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
 
           const message: Message = {
             messageId: messageDoc.id,
@@ -115,8 +116,9 @@ export function useMessages(eventId?: string) {
         mentions.push(match[1]);
       }
 
+      const db = getFirestore();
       // Create a new message document
-      const messageRef = doc(collection(firestore, 'messages'));
+      const messageRef = doc(collection(db, 'messages'));
       const messageData = {
         eventId,
         authorId,
@@ -130,7 +132,7 @@ export function useMessages(eventId?: string) {
       await setDoc(messageRef, messageData);
 
       // Get the author details
-      const authorDoc = await getDoc(doc(firestore, 'users', authorId));
+      const authorDoc = await getDoc(doc(db, 'users', authorId));
 
       const newMessage: Message = {
         messageId: messageRef.id,
@@ -152,8 +154,9 @@ export function useMessages(eventId?: string) {
 
   const addReaction = async (messageId: string, emoji: string, userId: string) => {
     try {
+      const db = getFirestore();
       // Get the message document
-      const messageRef = doc(firestore, 'messages', messageId);
+      const messageRef = doc(db, 'messages', messageId);
       const messageDoc = await getDoc(messageRef);
 
       if (!messageDoc.exists()) {
@@ -191,9 +194,10 @@ export function useMessages(eventId?: string) {
   let unsubscribeListener: (() => void) | null = null;
 
   const subscribeToMessages = (eventId: string) => {
+    const db = getFirestore();
     // Create a query for messages in this event
     const messagesQuery = query(
-      collection(firestore, 'messages'),
+      collection(db, 'messages'),
       where('eventId', '==', eventId)
     );
 
