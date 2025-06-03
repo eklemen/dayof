@@ -84,24 +84,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     scopes: ['public_profile', 'email'],
   });
 
-  // Handle Firebase auth state changes
+  // Load user from secure storage on initial mount only
+  useEffect(() => {
+    const loadUser = async () => {
+      try {
+        const savedUser = await SecureStore.getItemAsync('user');
+        if (savedUser) {
+          setUser(JSON.parse(savedUser));
+        }
+      } catch (error) {
+        console.error('Error loading user from storage:', error);
+      }
+      setLoading(false);
+    };
+
+    loadUser();
+  }, []); // Empty dependency array - run only once on mount
+
+  // Handle Firebase auth state changes - separate useEffect
   useEffect(() => {
     const unsubscribe = auth().onAuthStateChanged(async (firebaseUser) => {
       if (firebaseUser) {
-        // Get existing user data from secure storage
-        let existingUserData = {};
-        try {
-          const savedUser = await SecureStore.getItemAsync('user');
-          if (savedUser) {
-            existingUserData = JSON.parse(savedUser);
-          }
-        } catch (error) {
-          console.error('Error loading user from storage:', error);
-        }
-
         // Convert Firebase user to our User type, preserving existing data
         const userData: User = {
-          ...existingUserData, // Keep existing fields
+          ...(user || {}), // Keep existing fields if user exists
           id: firebaseUser.uid,
           email: firebaseUser.email,
           displayName: firebaseUser.displayName,
@@ -109,40 +115,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           facebookAccessToken: facebookAccessToken,
         };
 
-        // Store user data
-        setUser(userData);
+        // Only update if user data has actually changed to prevent loops
+        const hasChanged = !user || 
+          user.id !== userData.id || 
+          user.email !== userData.email || 
+          user.displayName !== userData.displayName ||
+          user.facebookAccessToken !== userData.facebookAccessToken;
 
-        // Save user data to secure storage
-        await SecureStore.setItemAsync('user', JSON.stringify(userData));
+        if (hasChanged) {
+          setUser(userData);
+          // Save user data to secure storage
+          await SecureStore.setItemAsync('user', JSON.stringify(userData));
+        }
       } else {
-        setUser(null);
-        await SecureStore.deleteItemAsync('user');
+        // Only clear user if we currently have one
+        if (user) {
+          setUser(null);
+          await SecureStore.deleteItemAsync('user');
+        }
       }
-
       setLoading(false);
     });
 
-    // Load user from secure storage on init
-    const loadUser = async () => {
-      try {
-        const savedUser = await SecureStore.getItemAsync('user');
-        if (savedUser) {
-          setUser(JSON.parse(savedUser));
-          // If we have a saved user, route to the main app
-          router.replace('/(tabs)');
-        }
-      } catch (error) {
-        console.error('Error loading user from storage:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    loadUser();
-
     // Cleanup subscription
     return () => unsubscribe();
-  }, [facebookAccessToken]);
+  }, [facebookAccessToken]); // Remove 'user' from dependencies to prevent loop
 
   // Handle Facebook auth response
   useEffect(() => {

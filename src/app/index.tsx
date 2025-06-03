@@ -18,21 +18,17 @@ export default function SplashScreenComponent() {
         // If auth is still loading, wait for it
         if (loading) return;
 
-        // If we have a user, check if we need to refresh the token
+        // Navigate based on auth state without calling refreshUser
         if (user) {
-          // Firebase handles token refresh automatically, but we can
-          // manually refresh user data if needed
-          await refreshUser();
-
           setTimeout(() => {
             // Navigate to the main app
             router.replace('/(tabs)');
-          }, 4000)
+          }, 1000);
         } else {
           setTimeout(() => {
             // No user found, navigate to login
             router.replace('/login');
-          }, 4000);
+          }, 1000);
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
@@ -43,12 +39,15 @@ export default function SplashScreenComponent() {
         setTimeout(() => {
           setIsCheckingAuth(false);
           SplashScreen.hideAsync();
-        });
+        }, 1500);
       }
     }
 
-    checkAuthAndNavigate();
-  }, [user, loading]);
+    // Only run once when loading completes
+    if (!loading) {
+      checkAuthAndNavigate();
+    }
+  }, [loading]); // Only depend on loading, not user
 
   // This component will only be visible briefly between the native splash screen
   // hiding and the navigation completing

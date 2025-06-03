@@ -369,3 +369,78 @@ export async function joinEventWithCode(groupCode: string, userId: string) {
 
   return eventId;
 }
+
+// Get or create a conversation for an event
+export async function getOrCreateEventConversation(eventId: string) {
+  const db = getFirestore();
+  
+  // Check if conversation already exists for this event
+  const conversationsQuery = query(
+    collection(db, 'conversations'),
+    where('eventId', '==', eventId),
+    where('type', '==', 'event')
+  );
+  
+  const conversationSnapshot = await getDocs(conversationsQuery);
+  
+  if (!conversationSnapshot.empty) {
+    // Return existing conversation
+    const conversationDoc = conversationSnapshot.docs[0];
+    return {
+      conversationId: conversationDoc.id,
+      ...conversationDoc.data()
+    };
+  }
+  
+  // Create new conversation for the event
+  const newConversationRef = doc(collection(db, 'conversations'));
+  const conversationData = {
+    eventId,
+    type: 'event',
+    createdAt: serverTimestamp(),
+    participantCount: 0
+  };
+  
+  await setDoc(newConversationRef, conversationData);
+  
+  return {
+    conversationId: newConversationRef.id,
+    ...conversationData
+  };
+}
+
+// Send a message to a conversation
+export async function sendMessageToConversation(
+  conversationId: string,
+  authorId: string,
+  body: string,
+  parentMessageId: string | null = null
+) {
+  const db = getFirestore();
+  
+  // Extract mentions from the message body
+  const mentionRegex = /@(\w+)/g;
+  const mentions = [];
+  let match;
+  while ((match = mentionRegex.exec(body)) !== null) {
+    mentions.push(match[1]);
+  }
+
+  // Create a new message document
+  const messageRef = doc(collection(db, `conversations/${conversationId}/messages`));
+  const messageData = {
+    authorId,
+    body,
+    parentMessageId,
+    reactions: {},
+    mentions: mentions,
+    createdAt: serverTimestamp()
+  };
+
+  await setDoc(messageRef, messageData);
+
+  return {
+    messageId: messageRef.id,
+    ...messageData
+  };
+}

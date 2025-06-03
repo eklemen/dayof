@@ -1,68 +1,106 @@
 import { useState, useEffect } from 'react';
-import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from '@react-native-firebase/firestore';
+import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, Timestamp, updateDoc } from '@react-native-firebase/firestore';
+import { getOrCreateEventConversation, sendMessageToConversation, addReaction as addReactionToMessage } from '@/src/services/firestoreQueries';
+import { Message } from '@/src/models/Message';
 
 export function useMessages(eventId?: string, parentMessageId: string | null = null) {
-  const [messages, setMessages] = useState<any[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(true);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  console.log('useMessages called with eventId---------->', eventId);
+  console.log('useMessages called with parentMessageId---------->', parentMessageId);
 
   useEffect(() => {
-    if (!eventId) return;
+    if (!eventId) {
+      console.log('useMessages: No eventId provided, returning early');
+      return;
+    }
 
-    const db = getFirestore();
+    let unsubscribe: (() => void) | null = null;
 
-    // Create consistent query between subscription and fetch
-    const messagesQuery = query(
-      collection(db, 'messages'),
-      where('eventId', '==', eventId),
-      where('parentMessageId', '==', parentMessageId),
-      orderBy('createdAt', 'desc')
-    );
-
-    // Set up the snapshot listener
-    const unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
-      setLoading(true);
+    const initializeConversation = async () => {
       try {
-        // Process the messages directly from the snapshot
-        const messagesWithAuthors = await Promise.all(
-          snapshot.docs.map(async (messageDoc) => {
-            const messageData = messageDoc.data();
-            console.log('messageData---------->', messageData);
-            const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
-            console.log('authorDoc---------->', authorDoc);
+        setLoading(true);
 
-            return {
-              messageId: messageDoc.id,
-              authorId: messageData.authorId,
-              body: messageData.body,
-              createdAt: messageData.createdAt instanceof Timestamp
-                ? messageData.createdAt.toDate().toISOString()
-                : messageData.createdAt,
-              parentMessageId: messageData.parentMessageId,
-              reactions: messageData.reactions || {},
-              mentions: messageData.mentions || [],
-              author: authorDoc.exists() ? {
-                id: authorDoc.id,
-                displayName: authorDoc.data().displayName,
-                instagramHandle: authorDoc.data().instagramHandle
-              } : undefined
-            };
-          })
+        // Get or create conversation for this event
+        const conversation = await getOrCreateEventConversation(eventId);
+        console.log('conversation---------->', conversation);
+        setConversationId(conversation.conversationId);
+
+        const db = getFirestore();
+
+        // Create query for messages in the conversation
+        const messagesQuery = query(
+          collection(db, `conversations/${conversation.conversationId}/messages`),
+          where('parentMessageId', '==', parentMessageId),
+          orderBy('createdAt', 'asc') // Show messages in chronological order
         );
+        
+        console.log('messagesQuery path---------->', `conversations/${conversation.conversationId}/messages`);
+        console.log('parentMessageId filter---------->', parentMessageId);
 
-        console.log('messagesWithAuthors---------->', messagesWithAuthors);
-        setMessages(messagesWithAuthors);
+        // Set up real-time listener
+        unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
+          try {
+            console.log('snapshot.docs.length---------->', snapshot.docs.length);
+            console.log('snapshot.docs---------->', snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() })));
+            
+            // Process the messages directly from the snapshot
+            const messagesWithAuthors = await Promise.all(
+              snapshot.docs.map(async (messageDoc) => {
+                const messageData = messageDoc.data();
+                console.log('messageData---------->', messageData);
+                const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
+
+                console.log('authorDoc.data()---------->', authorDoc.data());
+                const message: Message = {
+                  messageId: messageDoc.id,
+                  authorId: messageData.authorId,
+                  body: messageData.body,
+                  createdAt: messageData.createdAt instanceof Timestamp
+                    ? messageData.createdAt.toDate().toISOString()
+                    : messageData.createdAt,
+                  parentMessageId: messageData.parentMessageId,
+                  reactions: messageData.reactions || {},
+                  mentions: messageData.mentions || [],
+                  author: authorDoc.exists() ? {
+                    id: authorDoc.id,
+                    displayName: authorDoc.data()?.displayName,
+                    instagramHandle: authorDoc.data()?.instagramHandle
+                  } : undefined
+                };
+
+                return message;
+              })
+            );
+            console.log('messagesWithAuthors---------->', messagesWithAuthors);
+
+            setMessages(messagesWithAuthors);
+          } catch (error) {
+            console.error('Error processing messages:', error);
+          } finally {
+            setLoading(false);
+          }
+        }, (error) => {
+          console.error('Error in messages subscription:', error);
+          setLoading(false);
+        });
+
       } catch (error) {
-        console.error('Error processing messages:', error);
-      } finally {
+        console.error('Error initializing conversation:', error);
         setLoading(false);
       }
-    }, (error) => {
-      console.error('Error in messages subscription:', error);
-      setLoading(false);
-    });
+    };
+
+    initializeConversation();
 
     // Clean up subscription
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   }, [eventId, parentMessageId]);
 
   const sendMessage = async (
@@ -72,37 +110,31 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
     parentMessageId: string | null = null
   ) => {
     try {
-      const mentionRegex = /@(\w+)/g;
-      const mentions = [];
-      let match;
-      while ((match = mentionRegex.exec(body)) !== null) {
-        mentions.push(match[1]);
+      if (!conversationId) {
+        throw new Error('Conversation not initialized');
       }
 
-      const db = getFirestore();
-      const messageRef = doc(collection(db, 'messages'));
-      const messageData = {
-        eventId,
+      const messageResult = await sendMessageToConversation(
+        conversationId,
+        authorId,
+        body,
+        parentMessageId
+      );
+
+      const authorDoc = await getDoc(doc(getFirestore(), 'users', authorId));
+
+      const newMessage: Message = {
+        messageId: messageResult.messageId,
         authorId,
         body,
         parentMessageId,
         reactions: {},
-        mentions: mentions,
-        createdAt: serverTimestamp()
-      };
-
-      await setDoc(messageRef, messageData);
-
-      const authorDoc = await getDoc(doc(db, 'users', authorId));
-
-      const newMessage: Message = {
-        messageId: messageRef.id,
-        ...messageData,
+        mentions: messageResult.mentions || [],
         createdAt: new Date().toISOString(),
         author: authorDoc.exists() ? {
           id: authorDoc.id,
-          displayName: authorDoc.data().displayName,
-          instagramHandle: authorDoc.data().instagramHandle
+          displayName: authorDoc.data()?.displayName,
+          instagramHandle: authorDoc.data()?.instagramHandle
         } : undefined
       };
 
@@ -115,29 +147,11 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
 
   const addReaction = async (messageId: string, emoji: string, userId: string) => {
     try {
-      const db = getFirestore();
-      const messageRef = doc(db, 'messages', messageId);
-      const messageDoc = await getDoc(messageRef);
-
-      if (!messageDoc.exists()) {
-        throw new Error('Message not found');
+      if (!conversationId) {
+        throw new Error('Conversation not initialized');
       }
 
-      const messageData = messageDoc.data();
-      const currentReactions = messageData.reactions || {};
-      const emojiUsers = currentReactions[emoji] || [];
-
-      if (!emojiUsers.includes(userId)) {
-        const updatedReactions = {
-          ...currentReactions,
-          [emoji]: [...emojiUsers, userId]
-        };
-
-        await updateDoc(messageRef, {
-          reactions: updatedReactions
-        });
-      }
-
+      await addReactionToMessage(conversationId, messageId, emoji, userId);
       return { success: true, error: null };
     } catch (error: any) {
       console.error('Error adding reaction:', error);
