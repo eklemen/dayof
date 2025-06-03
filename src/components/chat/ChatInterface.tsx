@@ -14,7 +14,7 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfaceProps) {
   const { user } = useAuth();
-  const { messages, loading, sendMessage } = useMessages(eventId);
+  const { messages, loading, sendMessage } = useMessages(eventId, parentId);
   const [chatMessages, setChatMessages] = useState<IMessage[]>([]);
 
   console.log('messages---------->', messages);
@@ -34,11 +34,16 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
   }, [messages]);
 
   const onSend = useCallback(async (messages: IMessage[] = []) => {
-    if (!user) return;
+    if (!user) {
+      console.log('onSend: no user found');
+      return;
+    }
 
     const { text } = messages[0];
-    await sendMessage(eventId, user.id, text, parentId);
-  }, [user, eventId, parentId]);
+    console.log('onSend: sending message---------->', { eventId, userId: user.id, text, parentId });
+    const result = await sendMessage(eventId, user.id, text, parentId);
+    console.log('onSend: message sent result---------->', result);
+  }, [user, eventId, parentId, sendMessage]);
 
   const renderBubble = (props: any) => {
     return (

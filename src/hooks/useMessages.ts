@@ -23,7 +23,9 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
 
         // Get or create conversation for this event
         const conversation = await getOrCreateEventConversation(eventId);
+        console.log('conversation---------->', conversation);
         setConversationId(conversation.conversationId);
+        console.log('conversationId set to---------->', conversation.conversationId);
 
         const db = getFirestore();
 
@@ -31,7 +33,7 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
         const messagesQuery = query(
           collection(db, `conversations/${conversation.conversationId}/messages`),
           where('parentMessageId', '==', parentMessageId),
-          orderBy('createdAt', 'asc') // Show messages in chronological order
+          orderBy('createdAt', 'desc') // Show messages in chronological order
         );
 
 
@@ -112,8 +114,40 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
     parentMessageId: string | null = null
   ) => {
     try {
+      console.log('sendMessage called with conversationId---------->', conversationId);
       if (!conversationId) {
-        throw new Error('Conversation not initialized');
+        console.log('conversationId is null, attempting to get/create conversation...');
+        // If conversationId is not set, try to get/create it
+        const conversation = await getOrCreateEventConversation(eventId);
+        console.log('got conversation in sendMessage---------->', conversation);
+        setConversationId(conversation.conversationId);
+
+        // Use the conversation ID directly for this send operation
+        const messageResult = await sendMessageToConversation(
+          conversation.conversationId,
+          authorId,
+          body,
+          parentMessageId
+        );
+
+        const authorDoc = await getDoc(doc(getFirestore(), 'users', authorId));
+
+        const newMessage: Message = {
+          messageId: messageResult.messageId,
+          authorId,
+          body,
+          parentMessageId,
+          reactions: {},
+          mentions: messageResult.mentions || [],
+          createdAt: new Date().toISOString(),
+          author: authorDoc.exists() ? {
+            id: authorDoc.id,
+            displayName: authorDoc.data()?.displayName,
+            instagramHandle: authorDoc.data()?.instagramHandle
+          } : undefined
+        };
+
+        return { success: true, data: [newMessage], error: null };
       }
 
       const messageResult = await sendMessageToConversation(
