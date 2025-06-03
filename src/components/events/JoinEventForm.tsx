@@ -6,7 +6,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { useAuth } from '@/src/hooks/useAuth';
-import { useEvents } from '@/src/hooks/useEvents';
+import { useJoinEvent } from '@/src/services/service-hooks/useJoinEvent';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 
 interface JoinEventFormValues {
@@ -15,8 +15,7 @@ interface JoinEventFormValues {
 
 export function JoinEventForm() {
   const { user } = useAuth();
-  const { joinEventWithCode } = useEvents(user?.id);
-  const [loading, setLoading] = useState(false);
+  const joinEventMutation = useJoinEvent();
   const [error, setError] = useState<string | null>(null);
 
   const { control, handleSubmit, formState: { errors } } = useForm<JoinEventFormValues>({
@@ -32,22 +31,14 @@ export function JoinEventForm() {
       return;
     }
 
-    setLoading(true);
     setError(null);
 
-    const { success, error: joinError, alreadyMember } = await joinEventWithCode(data.groupCode, user.id);
-
-    setLoading(false);
-
-    if (!success) {
-      setError(joinError || 'Failed to join event');
-    } else {
-      if (alreadyMember) {
-        setError('You are already a member of this event');
-      } else {
-        // Navigate to events list
-        router.replace('/');
-      }
+    try {
+      await joinEventMutation.mutateAsync({ groupCode: data.groupCode, userId: user.id });
+      // Navigate to events list
+      router.replace('/');
+    } catch (joinError: any) {
+      setError(joinError?.message || 'Failed to join event');
     }
   };
 
@@ -92,8 +83,8 @@ export function JoinEventForm() {
           />
           <Button
             title="Join Event"
-            onPress={handleJoinEvent}
-            loading={loading}
+            onPress={handleSubmit(onSubmit)}
+            loading={joinEventMutation.isPending}
             style={styles.joinButton}
           />
         </View>

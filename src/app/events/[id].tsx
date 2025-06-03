@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -7,8 +7,7 @@ import { COLORS, SPACING } from '@/src/lib/constants';
 import { formatDate } from '@/src/lib/utils';
 import { ChatInterface } from '@/src/components/chat/ChatInterface';
 import { VendorsList } from '@/src/components/vendors/VendorsList';
-import { useEvents } from '@/src/hooks/useEvents';
-import { useAuth } from '@/src/hooks/useAuth';
+import { useGetEvent } from '@/src/services/service-hooks/useGetEvent';
 
 type Tab = 'chat' | 'vendors';
 
@@ -16,25 +15,11 @@ export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
   console.log('id---------->', id);
   const eventId = Array.isArray(id) ? id[0] : id || '';
-  const { getEvent } = useEvents();
-  const { user } = useAuth();
+  const { data: event, isLoading: loading, error } = useGetEvent(eventId);
 
-  const [event, setEvent] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [threadParentId, setThreadParentId] = useState<string | null>(null);
   const [showThread, setShowThread] = useState(false);
-
-  useEffect(() => {
-    fetchEventDetails();
-  }, [eventId]);
-
-  const fetchEventDetails = async () => {
-    setLoading(true);
-    const eventData = await getEvent(eventId);
-    setEvent(eventData);
-    setLoading(false);
-  };
 
   const handleOpenThread = (parentId: string) => {
     setThreadParentId(parentId);
@@ -65,10 +50,10 @@ export default function EventDetailScreen() {
         </TouchableOpacity>
         <View style={styles.titleContainer}>
           <Text style={styles.title} numberOfLines={1}>
-            {event.event_name}
+            {event.eventName}
           </Text>
           <Text style={styles.subtitle}>
-            {formatDate(event.start_date)} - {formatDate(event.end_date)}
+            {formatDate(event.startDate)} - {formatDate(event.endDate)}
           </Text>
         </View>
       </View>

@@ -2,14 +2,13 @@ import { StyleSheet, View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { useAuth } from '@/src/hooks/useAuth';
-import { useEvents } from '@/src/hooks/useEvents';
 import { formatDate } from '@/src/lib/utils';
 import { Calendar as CalendarIcon } from 'lucide-react-native';
 import { Card } from '@/src/components/ui/Card';
 
 export default function CalendarScreen() {
   const { user } = useAuth();
-  const { userEvents } = useEvents(user?.id);
+  const userEvents = [];
 
   // Group events by month
   const groupedEvents = userEvents.reduce((acc: Record<string, any[]>, event) => {

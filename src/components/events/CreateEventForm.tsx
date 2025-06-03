@@ -6,7 +6,7 @@ import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { useAuth } from '@/src/hooks/useAuth';
-import { useEvents } from '@/src/hooks/useEvents';
+import { useCreateEvent } from '@/src/services/service-hooks/useCreateEvent';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 
 interface EventFormValues {
@@ -20,8 +20,7 @@ interface EventFormValues {
 
 export function CreateEventForm() {
   const { user } = useAuth();
-  const { createEvent } = useEvents(user?.id);
-  const [loading, setLoading] = useState(false);
+  const createEventMutation = useCreateEvent();
   const [error, setError] = useState<string | null>(null);
 
   const { control, handleSubmit, formState: { errors } } = useForm<EventFormValues>({
@@ -56,27 +55,23 @@ export function CreateEventForm() {
       return;
     }
 
-    setLoading(true);
     setError(null);
 
     const eventData = {
-      event_name: data.eventName,
-      start_date: data.startDate,
-      end_date: data.endDate,
-      venue_name: data.venueName || null,
+      eventName: data.eventName,
+      startDate: data.startDate,
+      endDate: data.endDate,
+      venueName: data.venueName || null,
       address: data.address || null,
-      venue_phone: data.venuePhone || null,
+      venuePhone: data.venuePhone || null,
     };
 
-    const { success, error: createError } = await createEvent(eventData, user.id);
-
-    setLoading(false);
-
-    if (!success) {
-      setError(createError || 'Failed to create event');
-    } else {
+    try {
+      await createEventMutation.mutateAsync({ eventData, ownerId: user.id });
       // Navigate to events list
       router.replace('/');
+    } catch (createError: any) {
+      setError(createError?.message || 'Failed to create event');
     }
   };
 
@@ -192,7 +187,7 @@ export function CreateEventForm() {
           <Button
             title="Create Event"
             onPress={handleSubmit(onSubmit)}
-            loading={loading}
+            loading={createEventMutation.isPending}
             style={styles.createButton}
           />
         </View>

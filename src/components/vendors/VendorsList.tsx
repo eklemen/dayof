@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { StyleSheet, View, Text, FlatList, TouchableOpacity } from 'react-native';
 // import * as Clipboard from 'expo-clipboard';
-import { useEvents } from '@/src/hooks/useEvents';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { formatInstagramHandles } from '@/src/lib/utils';
 import { Card } from '@/src/components/ui/Card';
@@ -13,7 +12,7 @@ interface VendorsListProps {
 }
 
 export function VendorsList({ eventId }: VendorsListProps) {
-  const { getEventMembers } = useEvents();
+  const getEventMembers = () => ({ success: true, data: [] });
   const [members, setMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -24,7 +23,7 @@ export function VendorsList({ eventId }: VendorsListProps) {
 
   const fetchMembers = async () => {
     setLoading(true);
-    const { success, data } = await getEventMembers(eventId);
+    const { success, data } = await getEventMembers();
 
     if (success && data) {
       setMembers(data);
