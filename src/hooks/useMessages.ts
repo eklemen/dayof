@@ -8,8 +8,6 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
   const [loading, setLoading] = useState(true);
   const [conversationId, setConversationId] = useState<string | null>(null);
 
-  console.log('useMessages called with eventId---------->', eventId);
-  console.log('useMessages called with parentMessageId---------->', parentMessageId);
 
   useEffect(() => {
     if (!eventId) {
@@ -25,7 +23,6 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
 
         // Get or create conversation for this event
         const conversation = await getOrCreateEventConversation(eventId);
-        console.log('conversation---------->', conversation);
         setConversationId(conversation.conversationId);
 
         const db = getFirestore();
@@ -36,24 +33,34 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
           where('parentMessageId', '==', parentMessageId),
           orderBy('createdAt', 'asc') // Show messages in chronological order
         );
-        
-        console.log('messagesQuery path---------->', `conversations/${conversation.conversationId}/messages`);
-        console.log('parentMessageId filter---------->', parentMessageId);
+
 
         // Set up real-time listener
         unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
           try {
-            console.log('snapshot.docs.length---------->', snapshot.docs.length);
-            console.log('snapshot.docs---------->', snapshot.docs.map(doc => ({ id: doc.id, data: doc.data() })));
-            
+
             // Process the messages directly from the snapshot
             const messagesWithAuthors = await Promise.all(
               snapshot.docs.map(async (messageDoc) => {
                 const messageData = messageDoc.data();
-                console.log('messageData---------->', messageData);
-                const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
 
-                console.log('authorDoc.data()---------->', authorDoc.data());
+                // Handle system messages differently
+                let author = undefined;
+                if (messageData.authorId === 'system') {
+                  author = {
+                    id: 'system',
+                    displayName: 'System',
+                    instagramHandle: undefined
+                  };
+                } else {
+                  const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
+                  author = authorDoc.exists() ? {
+                    id: authorDoc.id,
+                    displayName: authorDoc.data()?.displayName,
+                    instagramHandle: authorDoc.data()?.instagramHandle
+                  } : undefined;
+                }
+
                 const message: Message = {
                   messageId: messageDoc.id,
                   authorId: messageData.authorId,
@@ -64,17 +71,12 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
                   parentMessageId: messageData.parentMessageId,
                   reactions: messageData.reactions || {},
                   mentions: messageData.mentions || [],
-                  author: authorDoc.exists() ? {
-                    id: authorDoc.id,
-                    displayName: authorDoc.data()?.displayName,
-                    instagramHandle: authorDoc.data()?.instagramHandle
-                  } : undefined
+                  author: author
                 };
 
                 return message;
               })
             );
-            console.log('messagesWithAuthors---------->', messagesWithAuthors);
 
             setMessages(messagesWithAuthors);
           } catch (error) {

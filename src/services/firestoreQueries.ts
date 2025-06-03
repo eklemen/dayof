@@ -325,6 +325,15 @@ export async function createEvent(eventData: {
     joinedAt: serverTimestamp()
   });
 
+  // Create conversation for the event automatically
+  const conversationRef = doc(collection(db, 'conversations'));
+  await setDoc(conversationRef, {
+    eventId: newEventRef.id,
+    type: 'event',
+    createdAt: serverTimestamp(),
+    participantCount: 1 // Start with the creator
+  });
+
   return newEventRef.id;
 }
 
@@ -402,6 +411,17 @@ export async function getOrCreateEventConversation(eventId: string) {
   };
   
   await setDoc(newConversationRef, conversationData);
+
+  // Add a welcome message to get the conversation started
+  const welcomeMessageRef = doc(collection(db, `conversations/${newConversationRef.id}/messages`));
+  await setDoc(welcomeMessageRef, {
+    authorId: 'system',
+    body: '🎉 Welcome to your event chat! Use this space to coordinate with vendors, share updates, and ask questions.',
+    parentMessageId: null,
+    reactions: {},
+    mentions: [],
+    createdAt: serverTimestamp()
+  });
   
   return {
     conversationId: newConversationRef.id,
