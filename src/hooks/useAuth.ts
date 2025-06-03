@@ -60,7 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const createUserDocIfNotExists = async () => {
     const user = auth().currentUser;
     if (!user) return;
-    
+
     const db = getFirestore();
     const userDocRef = doc(db, 'users', user.uid);
     const userDocSnap = await getDoc(userDocRef);
@@ -171,7 +171,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const db = getFirestore();
       const userDocRef = doc(db, 'users', firebaseUser.uid);
       const userDocSnap = await getDoc(userDocRef);
-      
+
       const isNewUser = !userDocSnap.exists();
 
       // If user doesn't exist, create the document
@@ -192,7 +192,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         facebookAccessToken: token,
       }
       setUser(userObj);
-      
+
       // Route based on whether user is new or existing
       if (isNewUser) {
         // First time logging in - go to enrollment info
@@ -289,7 +289,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       // Update the local state
       const updatedUser = { ...user, ...partial };
-      console.log('updatedUser---------->', updatedUser);
       setUser(updatedUser);
       await SecureStore.setItemAsync('user', JSON.stringify(updatedUser));
 

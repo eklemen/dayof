@@ -11,7 +11,6 @@ import { useGetEventsForUser } from '@/src/services/service-hooks/useGetEventsFo
 export default function EventsScreen() {
   const { user, loading: authLoading, signOut } = useAuth();
   const { data: events, isLoading: eventsLoading, error } = useGetEventsForUser();
-  console.log('events (tabs)---------->', events);
   const navigateToCreateEvent = () => {
     router.push('/events/create');
   };

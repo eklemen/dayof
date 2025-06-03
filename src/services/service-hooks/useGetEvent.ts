@@ -2,6 +2,7 @@ import { getEvent } from '@/src/services/firestoreQueries';
 import { useQuery } from '@tanstack/react-query';
 
 export function useGetEvent(eventId: string) {
+  console.log('eventId---------->', eventId);
   return useQuery({
     queryKey: ['event', eventId],
     enabled: !!eventId,

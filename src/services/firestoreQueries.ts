@@ -1,4 +1,4 @@
-import { 
+import {
   getFirestore,
   collection,
   doc,
@@ -233,13 +233,14 @@ export async function removeReaction(conversationId: string, messageId: string, 
 export async function getEvent(eventId: string) {
   const db = getFirestore();
   const eventDoc = await getDoc(doc(db, 'events', eventId));
-  
+
   if (!eventDoc.exists()) {
+    console.log('Event doc doesnt exist-------->');
     return null;
   }
-  
+
   const eventData = eventDoc.data()!;
-  
+  console.log('eventDoc.data() eventData---------->', eventData);
   // Convert Firestore Timestamp → JS Date
   const startDate: Date | null = eventData.startDate
     ? (eventData.startDate as FirebaseFirestoreTypes.Timestamp).toDate()
@@ -255,7 +256,7 @@ export async function getEvent(eventId: string) {
     fullVenue = await getVenueById(venueRef.id);
   }
 
-  return {
+  const builtResponse = {
     eventId: eventDoc.id,
     eventName: eventData.eventName,
     ownerId: (eventData.ownerId as FirebaseFirestoreTypes.DocumentReference).id,
@@ -264,6 +265,8 @@ export async function getEvent(eventId: string) {
     endDate,
     venue: fullVenue,
   };
+  console.log('builtResponse---------->', builtResponse);
+  return builtResponse
 }
 
 // Create a new event
@@ -292,7 +295,7 @@ export async function createEvent(eventData: {
   // Create the event
   const newEventRef = doc(collection(db, 'events'));
   const ownerRef = doc(db, 'users', ownerId);
-  
+
   const newEvent = {
     eventName: eventData.eventName,
     ownerId: ownerRef,
@@ -328,7 +331,7 @@ export async function createEvent(eventData: {
 // Join an event with a group code
 export async function joinEventWithCode(groupCode: string, userId: string) {
   const db = getFirestore();
-  
+
   // Find the event with the code
   const eventQuery = query(
     collection(db, 'events'),

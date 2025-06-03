@@ -14,18 +14,13 @@ interface ChatInterfaceProps {
 
 export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfaceProps) {
   const { user } = useAuth();
-  const { messages, loading, sendMessage, fetchMessages } = useMessages(eventId);
+  const { messages, loading, sendMessage } = useMessages(eventId);
   const [chatMessages, setChatMessages] = useState<IMessage[]>([]);
 
-  useEffect(() => {
-    if (eventId) {
-      fetchMessages(eventId, parentId);
-    }
-  }, [eventId, parentId]);
-
+  console.log('messages---------->', messages);
   useEffect(() => {
     // Convert Firestore messages to GiftedChat format
-    const formattedMessages = messages.map(msg => ({
+    const formattedMessages = (messages ?? []).map(msg => ({
       _id: msg.messageId,
       text: msg.body,
       createdAt: new Date(msg.createdAt),

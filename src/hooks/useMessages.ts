@@ -1,105 +1,69 @@
-import { useEffect, useState } from 'react';
-import {
-  getFirestore,
-  collection,
-  doc,
-  getDoc,
-  getDocs,
-  setDoc,
-  addDoc,
-  updateDoc,
-  query,
-  where,
-  orderBy,
-  onSnapshot,
-  Timestamp,
-  serverTimestamp
-} from '@react-native-firebase/firestore';
-import { Message } from '@/src/models/Message';
+import { useState, useEffect } from 'react';
+import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, setDoc, updateDoc, serverTimestamp, Timestamp } from '@react-native-firebase/firestore';
 
-export function useMessages(eventId?: string) {
-  const [messages, setMessages] = useState<Message[]>([]);
+export function useMessages(eventId?: string, parentMessageId: string | null = null) {
+  const [messages, setMessages] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (eventId) {
-      fetchMessages(eventId);
-      subscribeToMessages(eventId);
-    }
+    if (!eventId) return;
 
-    return () => {
-      if (eventId) {
-        unsubscribeFromMessages();
-      }
-    };
-  }, [eventId]);
+    const db = getFirestore();
 
-  const fetchMessages = async (eventId: string, parentMessageId: string | null = null) => {
-    try {
+    // Create consistent query between subscription and fetch
+    const messagesQuery = query(
+      collection(db, 'messages'),
+      where('eventId', '==', eventId),
+      where('parentMessageId', '==', parentMessageId),
+      orderBy('createdAt', 'desc')
+    );
+
+    // Set up the snapshot listener
+    const unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
       setLoading(true);
-      const db = getFirestore();
+      try {
+        // Process the messages directly from the snapshot
+        const messagesWithAuthors = await Promise.all(
+          snapshot.docs.map(async (messageDoc) => {
+            const messageData = messageDoc.data();
+            console.log('messageData---------->', messageData);
+            const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
+            console.log('authorDoc---------->', authorDoc);
 
-      // Create query based on whether we're fetching top-level messages or replies
-      let messagesQuery;
-      if (parentMessageId === null) {
-        messagesQuery = query(
-          collection(db, 'messages'),
-          where('eventId', '==', eventId),
-          where('parentMessageId', '==', null),
-          orderBy('createdAt', 'desc')
+            return {
+              messageId: messageDoc.id,
+              authorId: messageData.authorId,
+              body: messageData.body,
+              createdAt: messageData.createdAt instanceof Timestamp
+                ? messageData.createdAt.toDate().toISOString()
+                : messageData.createdAt,
+              parentMessageId: messageData.parentMessageId,
+              reactions: messageData.reactions || {},
+              mentions: messageData.mentions || [],
+              author: authorDoc.exists() ? {
+                id: authorDoc.id,
+                displayName: authorDoc.data().displayName,
+                instagramHandle: authorDoc.data().instagramHandle
+              } : undefined
+            };
+          })
         );
-      } else {
-        messagesQuery = query(
-          collection(db, 'messages'),
-          where('eventId', '==', eventId),
-          where('parentMessageId', '==', parentMessageId),
-          orderBy('createdAt', 'desc')
-        );
+
+        console.log('messagesWithAuthors---------->', messagesWithAuthors);
+        setMessages(messagesWithAuthors);
+      } catch (error) {
+        console.error('Error processing messages:', error);
+      } finally {
+        setLoading(false);
       }
-
-      const messagesSnapshot = await getDocs(messagesQuery);
-
-      if (messagesSnapshot.empty) {
-        setMessages([]);
-        return [];
-      }
-
-      // Get messages with author details
-      const messagesWithAuthors = await Promise.all(
-        messagesSnapshot.docs.map(async (messageDoc) => {
-          const messageData = messageDoc.data();
-          const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
-
-          const message: Message = {
-            messageId: messageDoc.id,
-            authorId: messageData.authorId,
-            body: messageData.body,
-            createdAt: messageData.createdAt instanceof Timestamp
-              ? messageData.createdAt.toDate().toISOString()
-              : messageData.createdAt,
-            parentMessageId: messageData.parentMessageId,
-            reactions: messageData.reactions || {},
-            mentions: messageData.mentions || [],
-            author: authorDoc.exists() ? {
-              id: authorDoc.id,
-              displayName: authorDoc.data().displayName,
-              instagramHandle: authorDoc.data().instagramHandle
-            } : undefined
-          };
-
-          return message;
-        })
-      );
-
-      setMessages(messagesWithAuthors);
-      return messagesWithAuthors;
-    } catch (error) {
-      console.error('Error in fetchMessages:', error);
-      return [];
-    } finally {
+    }, (error) => {
+      console.error('Error in messages subscription:', error);
       setLoading(false);
-    }
-  };
+    });
+
+    // Clean up subscription
+    return () => unsubscribe();
+  }, [eventId, parentMessageId]);
 
   const sendMessage = async (
     eventId: string,
@@ -108,7 +72,6 @@ export function useMessages(eventId?: string) {
     parentMessageId: string | null = null
   ) => {
     try {
-      // Extract mentions from the message body (e.g., @username)
       const mentionRegex = /@(\w+)/g;
       const mentions = [];
       let match;
@@ -117,7 +80,6 @@ export function useMessages(eventId?: string) {
       }
 
       const db = getFirestore();
-      // Create a new message document
       const messageRef = doc(collection(db, 'messages'));
       const messageData = {
         eventId,
@@ -131,13 +93,12 @@ export function useMessages(eventId?: string) {
 
       await setDoc(messageRef, messageData);
 
-      // Get the author details
       const authorDoc = await getDoc(doc(db, 'users', authorId));
 
       const newMessage: Message = {
         messageId: messageRef.id,
         ...messageData,
-        createdAt: new Date().toISOString(), // Use current time until server timestamp is available
+        createdAt: new Date().toISOString(),
         author: authorDoc.exists() ? {
           id: authorDoc.id,
           displayName: authorDoc.data().displayName,
@@ -155,7 +116,6 @@ export function useMessages(eventId?: string) {
   const addReaction = async (messageId: string, emoji: string, userId: string) => {
     try {
       const db = getFirestore();
-      // Get the message document
       const messageRef = doc(db, 'messages', messageId);
       const messageDoc = await getDoc(messageRef);
 
@@ -163,21 +123,16 @@ export function useMessages(eventId?: string) {
         throw new Error('Message not found');
       }
 
-      // Get current reactions
       const messageData = messageDoc.data();
       const currentReactions = messageData.reactions || {};
-
-      // Update reactions - in our new model, we store user IDs who reacted with each emoji
       const emojiUsers = currentReactions[emoji] || [];
 
-      // Only add the user if they haven't already reacted with this emoji
       if (!emojiUsers.includes(userId)) {
         const updatedReactions = {
           ...currentReactions,
           [emoji]: [...emojiUsers, userId]
         };
 
-        // Update the message document
         await updateDoc(messageRef, {
           reactions: updatedReactions
         });
@@ -190,39 +145,9 @@ export function useMessages(eventId?: string) {
     }
   };
 
-  // Realtime subscriptions
-  let unsubscribeListener: (() => void) | null = null;
-
-  const subscribeToMessages = (eventId: string) => {
-    const db = getFirestore();
-    // Create a query for messages in this event
-    const messagesQuery = query(
-      collection(db, 'messages'),
-      where('eventId', '==', eventId)
-    );
-
-    // Set up the snapshot listener
-    unsubscribeListener = onSnapshot(messagesQuery, (snapshot) => {
-      console.log('Messages changed, refreshing...');
-      fetchMessages(eventId);
-    }, (error) => {
-      console.error('Error in messages subscription:', error);
-    });
-
-    return unsubscribeListener;
-  };
-
-  const unsubscribeFromMessages = () => {
-    if (unsubscribeListener) {
-      unsubscribeListener();
-      unsubscribeListener = null;
-    }
-  };
-
   return {
     messages,
     loading,
-    fetchMessages,
     sendMessage,
     addReaction,
   };

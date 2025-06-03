@@ -13,10 +13,10 @@ type Tab = 'chat' | 'vendors';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
-  console.log('id---------->', id);
+  console.log('id from params---------->', id);
   const eventId = Array.isArray(id) ? id[0] : id || '';
   const { data: event, isLoading: loading, error } = useGetEvent(eventId);
-  
+
   console.log('Event data:', { event, loading, error, eventId });
 
   const [activeTab, setActiveTab] = useState<Tab>('chat');
@@ -42,10 +42,14 @@ export default function EventDetailScreen() {
   }
 
   if (error || !event) {
+    console.log('Event error details:', { error, event, eventId });
     return (
       <SafeAreaView style={styles.loadingContainer}>
         <Text>Event not found</Text>
-        <TouchableOpacity 
+        <Text style={{ marginTop: 8, color: 'red' }}>
+          {error ? `Error: ${JSON.stringify(error)}` : 'No event data found'}
+        </Text>
+        <TouchableOpacity
           style={{ marginTop: 16, padding: 12, backgroundColor: COLORS.primary[700], borderRadius: 8 }}
           onPress={() => router.back()}
         >
@@ -54,6 +58,7 @@ export default function EventDetailScreen() {
       </SafeAreaView>
     );
   }
+
 
   return (
     <SafeAreaView style={styles.container}>

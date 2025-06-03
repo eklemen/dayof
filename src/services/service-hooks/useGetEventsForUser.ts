@@ -4,7 +4,6 @@ import { useAuth } from '@/src/hooks/useAuth';
 
 export function useGetEventsForUser() {
   const { user } = useAuth();
-  console.log('user?.id---------->', user?.id);
   return useQuery({
     queryKey: ['events'],
     enabled: !!user?.id,
