@@ -1,19 +1,20 @@
 import { Avatar as GCAvatar} from '@/src/lib/react-native-gifted-chat/src';
 
-const Avatar = (props: any) => {
+export const Avatar = (props: any) => {
   return (
     <GCAvatar
       {...props}
       imageStyle={{
         left: {
-          width: 32,
-          height: 32,
-          borderRadius: 16,
+          width: 36,
+          height: 36,
+          borderRadius: 4,
+          marginRight: 8,
         },
         right: {
-          width: 32,
-          height: 32,
-          borderRadius: 16,
+          width: 36,
+          height: 36,
+          borderRadius: 4,
         },
       }}
       renderAvatarOnTop

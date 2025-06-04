@@ -7,6 +7,7 @@ import { MessageBubble } from './components/MessageBubble';
 import { Avatar } from './components/Avatar';
 import { Send } from './components/Send';
 import { Time } from './components/Time';
+import SlackMessage from './components/SlackMessage';
 import { COLORS } from '@/src/lib/constants';
 
 interface ChatInterfaceProps {
@@ -71,7 +72,7 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
           name: user?.displayName || 'You',
           avatar: user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'You')}&background=3b82f6&color=fff&size=128`,
         }}
-        renderBubble={MessageBubble}
+        renderMessage={SlackMessage}
         renderSend={Send}
         renderTime={Time}
         renderAvatar={Avatar}
@@ -93,15 +94,15 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'white',
   },
   messagesContainer: {
     paddingBottom: 10,
     paddingHorizontal: 8,
-    backgroundColor: '#f8f9fa',
+    backgroundColor: 'white',
   },
   textInput: {
-    borderRadius: 8,
+    borderRadius: 4,
     borderWidth: 1,
     borderColor: COLORS.gray[300],
     paddingHorizontal: 16,
