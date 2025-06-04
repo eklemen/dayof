@@ -17,7 +17,7 @@ import { COLORS } from '@/src/lib/constants';
 
 const { isSameUser, isSameDay } = utils;
 
-const SlackBubble = (props: any) => {
+const ChatBubble = (props: any) => {
   const {
     touchableProps,
     onLongPress,
@@ -69,12 +69,12 @@ const SlackBubble = (props: any) => {
           textStyle={{
             left: [
               styles.standardFont,
-              styles.slackMessageText,
+              styles.messageText,
               props.textStyle?.left,
             ],
             right: [
               styles.standardFont,
-              styles.slackMessageText,
+              styles.messageText,
               props.textStyle?.right,
             ],
           }}
@@ -92,7 +92,7 @@ const SlackBubble = (props: any) => {
       return (
         <MessageImage
           {...props}
-          imageStyle={[styles.slackImage, props.imageStyle]}
+          imageStyle={[styles.image, props.imageStyle]}
         />
       );
     }
@@ -218,7 +218,7 @@ const styles = StyleSheet.create({
   standardFont: {
     fontSize: 15,
   },
-  slackMessageText: {
+  messageText: {
     marginLeft: 0,
     marginRight: 0,
   },
@@ -261,11 +261,11 @@ const styles = StyleSheet.create({
   tickView: {
     flexDirection: 'row',
   },
-  slackImage: {
+  image: {
     borderRadius: 3,
     marginLeft: 0,
     marginRight: 0,
   },
 });
 
-export default SlackBubble;
+export default ChatBubble;

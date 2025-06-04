@@ -5,12 +5,11 @@ import {
 } from 'react-native';
 
 import { Avatar, Day, utils } from '@/src/lib/react-native-gifted-chat/src';
-import SlackBubble from './SlackBubble';
-import { COLORS } from '@/src/lib/constants';
+import ChatBubble from './ChatBubble';
 
 const { isSameUser, isSameDay } = utils;
 
-const SlackMessage = (props: any) => {
+const SquareMessage = (props: any) => {
   const {
     currentMessage,
     nextMessage,
@@ -47,7 +46,7 @@ const SlackMessage = (props: any) => {
     if (props.renderBubble)
       return props.renderBubble(bubbleProps);
 
-    return <SlackBubble {...bubbleProps} />;
+    return <ChatBubble {...bubbleProps} />;
   }, [getInnerComponentProps, props]);
 
   const renderAvatar = useCallback(() => {
@@ -68,7 +67,7 @@ const SlackMessage = (props: any) => {
       <Avatar
         {...avatarProps}
         imageStyle={{
-          left: [styles.slackAvatar, avatarProps.imageStyle, extraStyle],
+          left: [styles.avatar, avatarProps.imageStyle, extraStyle],
         }}
       />
     );
@@ -108,7 +107,7 @@ const styles = StyleSheet.create({
     marginLeft: 8,
     marginRight: 0,
   },
-  slackAvatar: {
+  avatar: {
     // The bottom should roughly line up with the first line of message text.
     height: 36,
     width: 36,
@@ -117,4 +116,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SlackMessage;
+export default SquareMessage;

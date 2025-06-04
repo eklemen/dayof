@@ -3,11 +3,10 @@ import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { GiftedChat, type IMessage } from '@/src/lib/react-native-gifted-chat/src';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useMessages } from '@/src/hooks/useMessages';
-import { MessageBubble } from './components/MessageBubble';
 import { Avatar } from './components/Avatar';
 import { Send } from './components/Send';
 import { Time } from './components/Time';
-import SlackMessage from './components/SlackMessage';
+import SquareMessage from './components/SquareMessage';
 import { COLORS } from '@/src/lib/constants';
 
 interface ChatInterfaceProps {
@@ -21,11 +20,11 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
   const { messages, loading, sendMessage } = useMessages(eventId, parentId);
   const [chatMessages, setChatMessages] = useState<IMessage[]>([]);
 
-  console.log('messages---------->', messages);
   useEffect(() => {
     // Convert Firestore messages to GiftedChat format
     const formattedMessages = (messages ?? []).map(msg => {
       const userName = msg.author?.displayName || (msg.authorId === 'system' ? 'System' : 'User');
+      console.log('msg.author---------->', msg.author);
       return {
         _id: msg.messageId,
         text: msg.body,
@@ -72,7 +71,7 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
           name: user?.displayName || 'You',
           avatar: user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'You')}&background=3b82f6&color=fff&size=128`,
         }}
-        renderMessage={SlackMessage}
+        renderMessage={SquareMessage}
         renderSend={Send}
         renderTime={Time}
         renderAvatar={Avatar}
