@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react';
-import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, Timestamp, updateDoc } from '@react-native-firebase/firestore';
+import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDoc, getDocs, Timestamp, updateDoc } from '@react-native-firebase/firestore';
 import { getOrCreateEventConversation, sendMessageToConversation, addReaction as addReactionToMessage } from '@/src/services/firestoreQueries';
 import { Message } from '@/src/models/Message';
+
+// Cache for user data to avoid refetching on every message update
+const usersCache = new Map<string, Map<string, any>>();
 
 export function useMessages(eventId?: string, parentMessageId: string | null = null) {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -40,45 +43,199 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
         // Set up real-time listener
         unsubscribe = onSnapshot(messagesQuery, async (snapshot) => {
           try {
+            console.log('snapshot.docs.length---------->', snapshot.docs.length);
 
-            // Process the messages directly from the snapshot
-            const messagesWithAuthors = await Promise.all(
-              snapshot.docs.map(async (messageDoc) => {
-                const messageData = messageDoc.data();
+            // Extract unique author IDs from messages
+            const authorIds = new Set<string>();
+            snapshot.docs.forEach((messageDoc) => {
+              const messageData = messageDoc.data();
+              if (messageData.authorId && messageData.authorId !== 'system') {
+                authorIds.add(messageData.authorId);
+              }
+            });
 
-                // Handle system messages differently
-                let author = undefined;
-                if (messageData.authorId === 'system') {
-                  author = {
-                    id: 'system',
-                    displayName: 'System',
-                    instagramHandle: undefined
-                  };
+            // Fetch all event members and create a user map for efficient lookups
+            const usersMap = new Map<string, any>();
+            
+            // Add system user
+            usersMap.set('system', {
+              id: 'system',
+              displayName: 'System',
+              instagramHandle: undefined
+            });
+
+            // Fetch event members if we have author IDs to fetch
+            if (authorIds.size > 0) {
+              console.log('Fetching users for authorIds---------->', Array.from(authorIds));
+              
+              // Check cache first
+              const cacheKey = eventId;
+              let cachedUsers = usersCache.get(cacheKey);
+              
+              if (cachedUsers) {
+                console.log('Using cached users for event---------->', cacheKey);
+                // Add cached users to the map
+                cachedUsers.forEach((userData, userId) => {
+                  usersMap.set(userId, userData);
+                });
+                
+                // Check if we need to fetch any new users not in cache
+                const uncachedAuthorIds = Array.from(authorIds).filter(authorId => 
+                  !cachedUsers.has(authorId)
+                );
+                
+                if (uncachedAuthorIds.length === 0) {
+                  console.log('All users found in cache, skipping fetch');
                 } else {
-                  const authorDoc = await getDoc(doc(db, 'users', messageData.authorId));
-                  author = authorDoc.exists() ? {
-                    id: authorDoc.id,
-                    displayName: authorDoc.data()?.displayName,
-                    instagramHandle: authorDoc.data()?.instagramHandle
-                  } : undefined;
+                  console.log('Some users not in cache, fetching:', uncachedAuthorIds);
+                  // We'll fetch only the missing users below
+                  authorIds.clear();
+                  uncachedAuthorIds.forEach(id => authorIds.add(id));
                 }
+              }
+              
+              // Only fetch if we have uncached users or no cache exists
+              if (authorIds.size > 0) {
+                console.log('Fetching users from Firestore---------->', Array.from(authorIds));
+                
+                // Strategy 1: Try to get event members first (more efficient)
+                try {
+                const eventMembersQuery = query(collection(db, `events/${eventId}/members`));
+                const membersSnapshot = await getDocs(eventMembersQuery);
+                
+                // Create a set of member user IDs for faster lookups
+                const memberUserIds = new Set<string>();
+                membersSnapshot.docs.forEach((memberDoc) => {
+                  const memberData = memberDoc.data();
+                  if (memberData.userId) {
+                    memberUserIds.add(memberData.userId);
+                  }
+                });
 
-                const message: Message = {
-                  messageId: messageDoc.id,
-                  authorId: messageData.authorId,
-                  body: messageData.body,
-                  createdAt: messageData.createdAt instanceof Timestamp
-                    ? messageData.createdAt.toDate().toISOString()
-                    : messageData.createdAt,
-                  parentMessageId: messageData.parentMessageId,
-                  reactions: messageData.reactions || {},
-                  mentions: messageData.mentions || [],
-                  author: author
-                };
+                console.log('Event members found---------->', Array.from(memberUserIds));
 
-                return message;
-              })
-            );
+                // Only fetch users that are both message authors AND event members
+                const relevantUserIds = Array.from(authorIds).filter(authorId => 
+                  memberUserIds.has(authorId)
+                );
+
+                console.log('Relevant user IDs (authors + members)---------->', relevantUserIds);
+
+                // Fetch user data for relevant users in parallel
+                const userFetches = relevantUserIds.map(async (authorId) => {
+                  try {
+                    const userDoc = await getDoc(doc(db, 'users', authorId));
+                    if (userDoc.exists()) {
+                      return {
+                        id: userDoc.id,
+                        data: userDoc.data()
+                      };
+                    }
+                    return null;
+                  } catch (error) {
+                    console.error(`Error fetching user ${authorId}:`, error);
+                    return null;
+                  }
+                });
+
+                const userResults = await Promise.all(userFetches);
+                
+                // Populate the users map
+                userResults.forEach((result) => {
+                  if (result) {
+                    usersMap.set(result.id, {
+                      id: result.id,
+                      displayName: result.data?.displayName,
+                      instagramHandle: result.data?.instagramHandle,
+                      photoURL: result.data?.photoURL
+                    });
+                  }
+                });
+
+                // For any author IDs not found in event members, add them with minimal data
+                authorIds.forEach((authorId) => {
+                  if (!usersMap.has(authorId)) {
+                    usersMap.set(authorId, {
+                      id: authorId,
+                      displayName: 'Unknown User',
+                      instagramHandle: undefined,
+                      photoURL: undefined
+                    });
+                  }
+                });
+
+              } catch (error) {
+                console.error('Error fetching event members, falling back to individual user fetches:', error);
+                
+                // Fallback: Fetch all users individually
+                const userFetches = Array.from(authorIds).map(async (authorId) => {
+                  try {
+                    const userDoc = await getDoc(doc(db, 'users', authorId));
+                    if (userDoc.exists()) {
+                      return {
+                        id: userDoc.id,
+                        data: userDoc.data()
+                      };
+                    }
+                    return null;
+                  } catch (error) {
+                    console.error(`Error fetching user ${authorId}:`, error);
+                    return null;
+                  }
+                });
+
+                const userResults = await Promise.all(userFetches);
+                
+                userResults.forEach((result) => {
+                  if (result) {
+                    usersMap.set(result.id, {
+                      id: result.id,
+                      displayName: result.data?.displayName,
+                      instagramHandle: result.data?.instagramHandle,
+                      photoURL: result.data?.photoURL
+                    });
+                  }
+                });
+              }
+              
+              // Update cache with fetched users
+              if (!cachedUsers) {
+                cachedUsers = new Map<string, any>();
+                usersCache.set(cacheKey, cachedUsers);
+              }
+              
+              // Add newly fetched users to cache
+              usersMap.forEach((userData, userId) => {
+                if (userId !== 'system') {
+                  cachedUsers!.set(userId, userData);
+                }
+              });
+              
+              console.log('Updated cache for event---------->', cacheKey, 'with users:', Array.from(cachedUsers.keys()));
+            }
+
+            console.log('usersMap---------->', usersMap);
+
+            // Process messages with optimized user lookups
+            const messagesWithAuthors = snapshot.docs.map((messageDoc) => {
+              const messageData = messageDoc.data();
+              const author = usersMap.get(messageData.authorId);
+
+              const message: Message = {
+                messageId: messageDoc.id,
+                authorId: messageData.authorId,
+                body: messageData.body,
+                createdAt: messageData.createdAt instanceof Timestamp
+                  ? messageData.createdAt.toDate().toISOString()
+                  : messageData.createdAt,
+                parentMessageId: messageData.parentMessageId,
+                reactions: messageData.reactions || {},
+                mentions: messageData.mentions || [],
+                author: author
+              };
+
+              return message;
+            });
 
             setMessages(messagesWithAuthors);
           } catch (error) {

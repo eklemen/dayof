@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { GiftedChat, type IMessage } from '@/src/lib/react-native-gifted-chat/src';
 import { useAuth } from '@/src/hooks/useAuth';
@@ -18,11 +18,11 @@ interface ChatInterfaceProps {
 export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfaceProps) {
   const { user } = useAuth();
   const { messages, loading, sendMessage } = useMessages(eventId, parentId);
-  const [chatMessages, setChatMessages] = useState<IMessage[]>([]);
 
-  useEffect(() => {
+  // Memoize message conversion to prevent unnecessary re-renders
+  const chatMessages = useMemo(() => {
     // Convert Firestore messages to GiftedChat format
-    const formattedMessages = (messages ?? []).map(msg => {
+    return (messages ?? []).map(msg => {
       const userName = msg.author?.displayName || (msg.authorId === 'system' ? 'System' : 'User');
       console.log('msg.author---------->', msg.author);
       return {
@@ -36,8 +36,6 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
         },
       };
     });
-
-    setChatMessages(formattedMessages);
   }, [messages]);
 
   const onSend = useCallback(async (messages: IMessage[] = []) => {
