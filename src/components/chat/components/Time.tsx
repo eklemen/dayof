@@ -6,6 +6,7 @@ export const Time = (props: any) => {
     <GCTime
       {...props}
       containerStyle={{
+        borderBottom: '1px solid red',
         left: {
           marginLeft: 0,
           marginRight: 0,

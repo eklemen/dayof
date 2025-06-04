@@ -27,7 +27,9 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
       console.log('msg.author---------->', msg.author);
       return {
         _id: msg.messageId,
-        text: msg.body,
+        text: (<Text onPress={() => {
+          console.log('onPress', msg.messageId, msg.body);
+        }}>{msg.body}</Text>),
         createdAt: new Date(msg.createdAt),
         user: {
           _id: msg.authorId,
@@ -72,6 +74,7 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
         renderMessage={SquareMessage}
         renderSend={Send}
         renderTime={Time}
+        dateFormat="MMMM D"
         renderAvatar={Avatar}
         alwaysShowSend
         isScrollToBottomEnabled
@@ -104,11 +107,13 @@ const styles = StyleSheet.create({
     borderColor: COLORS.gray[300],
     paddingHorizontal: 16,
     marginRight: 8,
-    paddingTop: 12,
-    paddingBottom: 12,
+    paddingTop: 18,
+    paddingBottom: 18,
+    height: 80,
     backgroundColor: 'white',
     fontSize: 15,
-    maxHeight: 100,
+    lineHeight: 15,
+    maxHeight: 150,
   },
   threadHeader: {
     flexDirection: 'row',
