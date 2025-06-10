@@ -66,6 +66,7 @@ const SquareMessage = (props: any) => {
     return (
       <Avatar
         {...avatarProps}
+        onPress={(e) => console.log('onPress------->', e)}
         imageStyle={{
           left: [styles.avatar, avatarProps.imageStyle, extraStyle],
         }}

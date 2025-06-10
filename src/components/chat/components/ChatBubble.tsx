@@ -21,6 +21,7 @@ const ChatBubble = (props: any) => {
   const {
     touchableProps,
     onLongPress,
+    onPress,
     renderCustomView,
     currentMessage,
     previousMessage,
@@ -49,7 +50,7 @@ const ChatBubble = (props: any) => {
         options,
         cancelButtonIndex,
       },
-      (buttonIndex: number) => {
+      (buttonIndex?: number) => {
         switch (buttonIndex) {
           case 0:
             // Copy text functionality would go here
@@ -58,6 +59,12 @@ const ChatBubble = (props: any) => {
       }
     );
   }, [onLongPress, currentMessage, context]);
+
+  const handlePress = useCallback(() => {
+    if (onPress) {
+      onPress(context, currentMessage);
+    }
+  }, [onPress, context, currentMessage]);
 
   const renderMessageText = useCallback(() => {
     if (currentMessage.text) {
@@ -195,6 +202,7 @@ const ChatBubble = (props: any) => {
   return (
     <View style={[styles.container, containerStyle?.[position]]}>
       <TouchableOpacity
+        onPress={handlePress}
         onLongPress={handleLongPress}
         accessibilityRole="button"
         {...touchableProps}

@@ -13,9 +13,10 @@ interface ChatInterfaceProps {
   eventId: string;
   parentId?: string | null;
   onClose?: () => void;
+  onOpenThread?: (messageId: string) => void;
 }
 
-export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfaceProps) {
+export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread }: ChatInterfaceProps) {
   const { user } = useAuth();
   const { messages, loading, sendMessage } = useMessages(eventId, parentId);
 
@@ -27,9 +28,7 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
       console.log('msg.author---------->', msg.author);
       return {
         _id: msg.messageId,
-        text: (<Text onPress={() => {
-          console.log('onPress', msg.messageId, msg.body);
-        }}>{msg.body}</Text>),
+        text: (<Text>{msg.body}</Text>),
         createdAt: new Date(msg.createdAt),
         user: {
           _id: msg.authorId,
@@ -86,6 +85,15 @@ export function ChatInterface({ eventId, parentId = null, onClose }: ChatInterfa
         textInputStyle={styles.textInput}
         minInputToolbarHeight={60}
         bottomOffset={0}
+        onPressAvatar={(e) => console.log('onPressAvatar------->', e)}
+        onPress={(context, message) => {
+          console.log('onPress message bubble------->', message);
+          console.log('onPress message context------->', context);
+          // Only open thread for root messages (not already in a thread)
+          if (!parentId && onOpenThread) {
+            onOpenThread(message._id);
+          }
+        }}
       />
     </View>
   );

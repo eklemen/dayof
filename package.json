@@ -8,7 +8,7 @@
     "build:web": "expo export --platform web",
     "lint": "expo lint",
     "android": "expo run:android",
-    "ios": "expo run:ios"
+    "ios": "npx expo run:ios"
   },
   "resolutions": {
     "expo-auth-session": "6.1.5",
