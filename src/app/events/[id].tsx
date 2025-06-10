@@ -2,14 +2,12 @@ import { useState } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, MessageSquare, Users } from 'lucide-react-native';
+import { ArrowLeft, Menu, Users, Settings, UserPlus } from 'lucide-react-native';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { formatDate } from '@/src/lib/utils';
 import { ChatInterface } from '@/src/components/chat/ChatInterface';
 import { VendorsList } from '@/src/components/vendors/VendorsList';
 import { useGetEvent } from '@/src/services/service-hooks/useGetEvent';
-
-type Tab = 'chat' | 'vendors';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
@@ -19,9 +17,9 @@ export default function EventDetailScreen() {
 
   console.log('Event data:', { event, loading, error, eventId });
 
-  const [activeTab, setActiveTab] = useState<Tab>('chat');
   const [threadParentId, setThreadParentId] = useState<string | null>(null);
   const [showThread, setShowThread] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
 
   const handleOpenThread = (parentId: string) => {
     setThreadParentId(parentId);
@@ -31,6 +29,29 @@ export default function EventDetailScreen() {
   const handleCloseThread = () => {
     setShowThread(false);
     setThreadParentId(null);
+  };
+
+  const handleMenuPress = () => {
+    setShowMenu(true);
+  };
+
+  const handleCloseMenu = () => {
+    setShowMenu(false);
+  };
+
+  const handleViewVendors = () => {
+    setShowMenu(false);
+    // Navigate to vendors view or show vendors modal
+  };
+
+  const handleEventSettings = () => {
+    setShowMenu(false);
+    // Navigate to event settings
+  };
+
+  const handleInviteUsers = () => {
+    setShowMenu(false);
+    // Navigate to invite users
   };
 
   if (loading) {
@@ -77,50 +98,19 @@ export default function EventDetailScreen() {
             {formatDate(event.startDate)} - {formatDate(event.endDate)}
           </Text>
         </View>
-      </View>
-
-      <View style={styles.tabBar}>
         <TouchableOpacity
-          style={[styles.tab, activeTab === 'chat' && styles.activeTab]}
-          onPress={() => setActiveTab('chat')}
+          style={styles.menuButton}
+          onPress={handleMenuPress}
         >
-          <MessageSquare
-            size={20}
-            color={activeTab === 'chat' ? COLORS.primary[700] : COLORS.gray[500]}
-          />
-          <Text style={[
-            styles.tabText,
-            activeTab === 'chat' && styles.activeTabText
-          ]}>
-            Chat
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.tab, activeTab === 'vendors' && styles.activeTab]}
-          onPress={() => setActiveTab('vendors')}
-        >
-          <Users
-            size={20}
-            color={activeTab === 'vendors' ? COLORS.primary[700] : COLORS.gray[500]}
-          />
-          <Text style={[
-            styles.tabText,
-            activeTab === 'vendors' && styles.activeTabText
-          ]}>
-            Vendors
-          </Text>
+          <Menu size={24} color="white" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        {activeTab === 'chat' ? (
-          <ChatInterface
-            eventId={eventId}
-          />
-        ) : (
-          <VendorsList eventId={eventId} />
-        )}
+        <ChatInterface
+          eventId={eventId}
+          onOpenThread={handleOpenThread}
+        />
       </View>
 
       <Modal
@@ -137,6 +127,36 @@ export default function EventDetailScreen() {
             />
           )}
         </SafeAreaView>
+      </Modal>
+
+      <Modal
+        visible={showMenu}
+        animationType="fade"
+        transparent
+        onRequestClose={handleCloseMenu}
+      >
+        <TouchableOpacity
+          style={styles.menuOverlay}
+          activeOpacity={1}
+          onPress={handleCloseMenu}
+        >
+          <View style={styles.menuContainer}>
+            <TouchableOpacity style={styles.menuItem} onPress={handleViewVendors}>
+              <Users size={20} color={COLORS.gray[700]} />
+              <Text style={styles.menuItemText}>View Vendors</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={handleInviteUsers}>
+              <UserPlus size={20} color={COLORS.gray[700]} />
+              <Text style={styles.menuItemText}>Invite Users</Text>
+            </TouchableOpacity>
+            
+            <TouchableOpacity style={styles.menuItem} onPress={handleEventSettings}>
+              <Settings size={20} color={COLORS.gray[700]} />
+              <Text style={styles.menuItemText}>Event Settings</Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
       </Modal>
     </SafeAreaView>
   );
@@ -164,6 +184,10 @@ const styles = StyleSheet.create({
   },
   titleContainer: {
     flex: 1,
+    marginRight: SPACING.m,
+  },
+  menuButton: {
+    padding: 4,
   },
   title: {
     color: 'white',
@@ -176,32 +200,39 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontFamily: 'Inter-Regular',
   },
-  tabBar: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray[200],
-    backgroundColor: 'white',
-  },
-  tab: {
+  menuOverlay: {
     flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'flex-start',
+    alignItems: 'flex-end',
+    paddingTop: 100,
+    paddingRight: SPACING.m,
+  },
+  menuContainer: {
+    backgroundColor: 'white',
+    borderRadius: 8,
+    paddingVertical: SPACING.xs,
+    minWidth: 180,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 2,
+    },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
+  menuItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: SPACING.m,
+    paddingHorizontal: SPACING.m,
+    paddingVertical: SPACING.s,
   },
-  activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: COLORS.primary[700],
-  },
-  tabText: {
-    marginLeft: SPACING.xs,
+  menuItemText: {
+    marginLeft: SPACING.s,
     fontSize: 16,
-    color: COLORS.gray[500],
+    color: COLORS.gray[700],
     fontFamily: 'Inter-Medium',
-  },
-  activeTabText: {
-    color: COLORS.primary[700],
-    fontFamily: 'Inter-SemiBold',
   },
   content: {
     flex: 1,

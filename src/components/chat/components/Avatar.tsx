@@ -4,7 +4,6 @@ import { View } from 'react-native';
 export const Avatar = (props: any) => {
   const hasPhoto = props.currentMessage?.user?.avatar;
 
-  console.log('hasPhoto---------->', hasPhoto);
   if (!hasPhoto) {
     return (
       <View
