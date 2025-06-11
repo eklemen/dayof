@@ -4,6 +4,7 @@ import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Menu, Users, Settings, UserPlus, X } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
+import Toast from 'react-native-toast-message';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { formatDate } from '@/src/lib/utils';
 import { ChatInterface } from '@/src/components/chat/ChatInterface';
@@ -90,6 +91,15 @@ export default function EventDetailScreen() {
     setShowVendorsModal(false);
   };
 
+  const showCopyNotification = (message: string, type: 'success' | 'info' = 'success') => {
+
+    Toast.show({
+      type,
+      text1: message,
+
+    });
+  };
+
   const copyInstagramHandles = async () => {
     const igHandles = vendorData
       .filter((vendor: any) => vendor.social?.instagram)
@@ -98,6 +108,9 @@ export default function EventDetailScreen() {
 
     if (igHandles) {
       await Clipboard.setStringAsync(igHandles);
+      showCopyNotification('Instagram handles copied!', 'success');
+    } else {
+      showCopyNotification('No Instagram handles found', 'info');
     }
   };
 
@@ -109,6 +122,9 @@ export default function EventDetailScreen() {
 
     if (fbHandles) {
       await Clipboard.setStringAsync(fbHandles);
+      showCopyNotification('Facebook handles copied!', 'success');
+    } else {
+      showCopyNotification('No Facebook handles found', 'info');
     }
   };
 
@@ -118,8 +134,12 @@ export default function EventDetailScreen() {
       .map((vendor: any) => vendor.email)
       .join('\n');
 
+    console.log('emails---------->', emails);
     if (emails) {
       await Clipboard.setStringAsync(emails);
+      showCopyNotification('Email addresses copied!', 'success');
+    } else {
+      showCopyNotification('No email addresses found', 'info');
     }
   };
 
@@ -313,7 +333,9 @@ export default function EventDetailScreen() {
               />
             </View>
           )}
+
         </SafeAreaView>
+        <Toast />
       </Modal>
     </SafeAreaView>
   );

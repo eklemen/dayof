@@ -9,6 +9,7 @@ import '@/src/styles/global.css'
 import { AuthProvider } from '@/src/hooks/useAuth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
+import Toast from 'react-native-toast-message';
 const queryClient = new QueryClient()
 
 export default function RootLayout() {
@@ -71,6 +72,7 @@ export default function RootLayout() {
           <StatusBar style="auto" />
           </>
         </ActionSheetProvider>
+        <Toast />
       </AuthProvider>
     </QueryClientProvider>
   );

@@ -189,6 +189,9 @@ importers:
       react-native-svg:
         specifier: 15.11.2
         version: 15.11.2(react-native@0.79.1(@babel/core@7.27.4)(@react-native-community/cli@18.0.0(typescript@5.8.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
+      react-native-toast-message:
+        specifier: ^2.3.0
+        version: 2.3.0(react-native@0.79.1(@babel/core@7.27.4)(@react-native-community/cli@18.0.0(typescript@5.8.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0)
       react-native-url-polyfill:
         specifier: ^2.0.0
         version: 2.0.0(react-native@0.79.1(@babel/core@7.27.4)(@react-native-community/cli@18.0.0(typescript@5.8.3))(@types/react@19.0.14)(react@19.0.0))
@@ -4441,6 +4444,12 @@ packages:
 
   react-native-svg@15.11.2:
     resolution: {integrity: sha512-+YfF72IbWQUKzCIydlijV1fLuBsQNGMT6Da2kFlo1sh+LE3BIm/2Q7AR1zAAR6L0BFLi1WaQPLfFUC9bNZpOmw==}
+    peerDependencies:
+      react: '*'
+      react-native: '*'
+
+  react-native-toast-message@2.3.0:
+    resolution: {integrity: sha512-d7LldTK1ei1Bl7RFhoOYw8hVQ4oKPQHORYI//xR9Pyz3HxSlFlvQbueE5X3KLoemRRgBrOUg3zY6DxXnxrVLRg==}
     peerDependencies:
       react: '*'
       react-native: '*'
@@ -10782,6 +10791,11 @@ snapshots:
       react: 19.0.0
       react-native: 0.79.1(@babel/core@7.27.4)(@react-native-community/cli@18.0.0(typescript@5.8.3))(@types/react@19.0.14)(react@19.0.0)
       warn-once: 0.1.1
+
+  react-native-toast-message@2.3.0(react-native@0.79.1(@babel/core@7.27.4)(@react-native-community/cli@18.0.0(typescript@5.8.3))(@types/react@19.0.14)(react@19.0.0))(react@19.0.0):
+    dependencies:
+      react: 19.0.0
+      react-native: 0.79.1(@babel/core@7.27.4)(@react-native-community/cli@18.0.0(typescript@5.8.3))(@types/react@19.0.14)(react@19.0.0)
 
   react-native-url-polyfill@2.0.0(react-native@0.79.1(@babel/core@7.27.4)(@react-native-community/cli@18.0.0(typescript@5.8.3))(@types/react@19.0.14)(react@19.0.0)):
     dependencies:
