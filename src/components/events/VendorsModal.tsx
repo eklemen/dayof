@@ -1,4 +1,4 @@
-import { StyleSheet, View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Modal, FlatList, ListRenderItem } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
@@ -6,17 +6,7 @@ import * as Clipboard from 'expo-clipboard';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
-
-interface VendorData {
-  userId: string;
-  displayName: string;
-  categories: string[];
-  email?: string;
-  social?: {
-    instagram?: string;
-    facebook?: string;
-  };
-}
+import { VendorData, ToastType } from '@/src/types/events';
 
 interface VendorsModalProps {
   visible: boolean;
@@ -25,17 +15,19 @@ interface VendorsModalProps {
 }
 
 export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps) {
-  const showCopyNotification = (message: string, type: 'success' | 'info' = 'success') => {
+  const showCopyNotification = (message: string, type: ToastType = 'success'): void => {
     Toast.show({
       type,
       text1: message,
     });
   };
 
-  const copyInstagramHandles = async () => {
+  const copyInstagramHandles = async (): Promise<void> => {
     const igHandles = vendorData
-      .filter((vendor) => vendor.social?.instagram)
-      .map((vendor) => `@${vendor.social!.instagram!.replace('@', '')}`)
+      .filter((vendor): vendor is VendorData & { social: { instagram: string } } => 
+        Boolean(vendor.social?.instagram)
+      )
+      .map((vendor) => `@${vendor.social.instagram.replace('@', '')}`)
       .join('\n');
 
     if (igHandles) {
@@ -46,10 +38,12 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
     }
   };
 
-  const copyFacebookHandles = async () => {
+  const copyFacebookHandles = async (): Promise<void> => {
     const fbHandles = vendorData
-      .filter((vendor) => vendor.social?.facebook)
-      .map((vendor) => vendor.social!.facebook!)
+      .filter((vendor): vendor is VendorData & { social: { facebook: string } } => 
+        Boolean(vendor.social?.facebook)
+      )
+      .map((vendor) => vendor.social.facebook)
       .join('\n');
 
     if (fbHandles) {
@@ -60,10 +54,12 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
     }
   };
 
-  const copyEmails = async () => {
+  const copyEmails = async (): Promise<void> => {
     const emails = vendorData
-      .filter((vendor) => vendor.email)
-      .map((vendor) => vendor.email!)
+      .filter((vendor): vendor is VendorData & { email: string } => 
+        Boolean(vendor.email)
+      )
+      .map((vendor) => vendor.email)
       .join('\n');
 
     if (emails) {
@@ -74,16 +70,16 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
     }
   };
 
-  const renderVendorItem = ({ item }: { item: VendorData }) => (
+  const renderVendorItem: ListRenderItem<VendorData> = ({ item }) => (
     <Card variant="outlined" style={styles.vendorCard}>
       <View style={styles.vendorInfo}>
         <Text style={styles.vendorName}>
           {item.displayName || 'Unknown Vendor'}
         </Text>
-        {item.categories && item.categories.length > 0 && (
+        {item.categories.length > 0 && (
           <View style={styles.categoriesContainer}>
-            {item.categories.map((category: string, index: number) => (
-              <View key={index} style={styles.categoryBadge}>
+            {item.categories.map((category, index) => (
+              <View key={`${item.userId}-category-${index}`} style={styles.categoryBadge}>
                 <Text style={styles.categoryText}>{category}</Text>
               </View>
             ))}

@@ -13,7 +13,12 @@ interface JoinEventFormValues {
   groupCode: string;
 }
 
-export function JoinEventForm() {
+interface JoinEventFormProps {
+  onSuccess?: (eventId: string) => void;
+  onError?: (error: string) => void;
+}
+
+export function JoinEventForm({ onSuccess, onError }: JoinEventFormProps = {}) {
   const { user } = useAuth();
   const joinEventMutation = useJoinEvent();
   const [error, setError] = useState<string | null>(null);

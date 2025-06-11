@@ -18,7 +18,12 @@ interface EventFormValues {
   venuePhone: string;
 }
 
-export function CreateEventForm() {
+interface CreateEventFormProps {
+  onSuccess?: (eventId: string) => void;
+  onError?: (error: string) => void;
+}
+
+export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {}) {
   const { user } = useAuth();
   const createEventMutation = useCreateEvent();
   const [error, setError] = useState<string | null>(null);

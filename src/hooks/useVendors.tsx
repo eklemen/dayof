@@ -1,26 +1,21 @@
 import { useState } from 'react';
 import { useGetUsersInEvent } from '@/src/services/service-hooks/useGetUsersInEvent';
 import { getCategoriesForUser, getUserProfile } from '@/src/services/firestoreQueries';
+import { VendorData, EventMember } from '@/src/types/events';
 
-export interface VendorData {
-  userId: string;
-  displayName: string;
-  categories: string[];
-  email?: string;
-  social?: {
-    instagram?: string;
-    facebook?: string;
-  };
-  role?: string;
-  joinedAt?: any;
+interface UseVendorsReturn {
+  vendorData: VendorData[];
+  isLoading: boolean;
+  loadVendorData: () => Promise<VendorData[]>;
+  hasVendors: boolean;
 }
 
-export function useVendors(eventId: string) {
+export function useVendors(eventId: string): UseVendorsReturn {
   const { data: eventUsers } = useGetUsersInEvent(eventId);
   const [vendorData, setVendorData] = useState<VendorData[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
-  const loadVendorData = async () => {
+  const loadVendorData = async (): Promise<VendorData[]> => {
     if (!eventUsers || eventUsers.length === 0) {
       setVendorData([]);
       return [];
@@ -31,7 +26,7 @@ export function useVendors(eventId: string) {
     try {
       // Prepare vendor data with categories and full user profiles
       const vendorsWithCategories = await Promise.all(
-        eventUsers.map(async (member: any) => {
+        eventUsers.map(async (member: EventMember): Promise<VendorData> => {
           try {
             const [userProfile, userCategories] = await Promise.all([
               getUserProfile(member.userId),
@@ -46,11 +41,13 @@ export function useVendors(eventId: string) {
           } catch (error) {
             console.error('Error fetching vendor data:', error);
             return {
-              ...member,
+              userId: member.userId,
               displayName: 'Unknown User',
               categories: [],
               email: undefined,
-              social: {}
+              social: undefined,
+              role: member.role,
+              joinedAt: member.joinedAt
             };
           }
         })
@@ -60,8 +57,9 @@ export function useVendors(eventId: string) {
       return vendorsWithCategories;
     } catch (error) {
       console.error('Error loading vendor data:', error);
-      setVendorData([]);
-      return [];
+      const emptyData: VendorData[] = [];
+      setVendorData(emptyData);
+      return emptyData;
     } finally {
       setIsLoading(false);
     }

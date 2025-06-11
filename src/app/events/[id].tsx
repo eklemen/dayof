@@ -10,54 +10,55 @@ import { VendorsModal } from '@/src/components/events/VendorsModal';
 import { MenuModal } from '@/src/components/events/MenuModal';
 import { useGetEvent } from '@/src/services/service-hooks/useGetEvent';
 import { useVendors } from '@/src/hooks/useVendors';
+import { Event } from '@/src/types/events';
 
-export default function EventDetailScreen() {
+export default function EventDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams();
-  const eventId = Array.isArray(id) ? id[0] : id || '';
+  const eventId: string = Array.isArray(id) ? id[0] : id || '';
   const { data: event, isLoading: loading, error } = useGetEvent(eventId);
   const { vendorData, loadVendorData } = useVendors(eventId);
 
   console.log('Event data:', { event, loading, error, eventId });
 
   const [threadParentId, setThreadParentId] = useState<string | null>(null);
-  const [showThread, setShowThread] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
-  const [showVendorsModal, setShowVendorsModal] = useState(false);
+  const [showThread, setShowThread] = useState<boolean>(false);
+  const [showMenu, setShowMenu] = useState<boolean>(false);
+  const [showVendorsModal, setShowVendorsModal] = useState<boolean>(false);
 
-  const handleOpenThread = (parentId: string) => {
+  const handleOpenThread = (parentId: string): void => {
     setThreadParentId(parentId);
     setShowThread(true);
   };
 
-  const handleCloseThread = () => {
+  const handleCloseThread = (): void => {
     setShowThread(false);
     setThreadParentId(null);
   };
 
-  const handleMenuPress = () => {
+  const handleMenuPress = (): void => {
     setShowMenu(true);
   };
 
-  const handleCloseMenu = () => {
+  const handleCloseMenu = (): void => {
     setShowMenu(false);
   };
 
-  const handleViewVendors = async () => {
+  const handleViewVendors = async (): Promise<void> => {
     setShowMenu(false);
     await loadVendorData();
     setShowVendorsModal(true);
   };
 
-  const handleCloseVendorsModal = () => {
+  const handleCloseVendorsModal = (): void => {
     setShowVendorsModal(false);
   };
 
-  const handleEventSettings = () => {
+  const handleEventSettings = (): void => {
     setShowMenu(false);
     // Navigate to event settings
   };
 
-  const handleInviteUsers = () => {
+  const handleInviteUsers = (): void => {
     setShowMenu(false);
     // Navigate to invite users
   };

@@ -5,6 +5,8 @@ import {
   TouchableOpacity,
   View,
   Platform,
+  TextStyle,
+  ViewStyle,
 } from 'react-native';
 import {
   MessageText,
@@ -12,12 +14,36 @@ import {
   Time,
   utils,
   useChatContext,
+  IMessage,
+  User,
+  LeftRightStyle,
 } from '@/src/lib/react-native-gifted-chat/src';
 import { COLORS } from '@/src/lib/constants';
 
 const { isSameUser, isSameDay } = utils;
 
-const ChatBubble = (props: any) => {
+interface ChatBubbleProps {
+  touchableProps?: object;
+  onLongPress?: (context: any, message: IMessage) => void;
+  onPress?: (context: any, message: IMessage) => void;
+  renderCustomView?: (props: ChatBubbleProps) => React.ReactNode;
+  renderMessageText?: (props: ChatBubbleProps) => React.ReactNode;
+  renderMessageImage?: (props: ChatBubbleProps) => React.ReactNode;
+  renderTicks?: (message: IMessage) => React.ReactNode;
+  renderTime?: (props: ChatBubbleProps) => React.ReactNode;
+  currentMessage: IMessage;
+  previousMessage?: IMessage;
+  user: User;
+  containerStyle?: LeftRightStyle<ViewStyle>;
+  wrapperStyle?: LeftRightStyle<ViewStyle>;
+  usernameStyle?: TextStyle;
+  tickStyle?: TextStyle;
+  textStyle?: LeftRightStyle<TextStyle>;
+  imageStyle?: any;
+  position: 'left' | 'right';
+}
+
+const ChatBubble = (props: ChatBubbleProps) => {
   const {
     touchableProps,
     onLongPress,
@@ -130,12 +156,10 @@ const ChatBubble = (props: any) => {
     return null;
   }, [props, user]);
 
-  const renderUsername = useCallback(() => {
+  const renderUsername = useCallback((): React.ReactNode => {
     console.log('currentMessage---------->', currentMessage.user);
     const username = currentMessage.user.name;
     if (username) {
-      if (props.renderUsername) return props.renderUsername(props);
-
       return (
         <Text
           style={[
@@ -150,7 +174,7 @@ const ChatBubble = (props: any) => {
       );
     }
     return null;
-  }, [currentMessage, props, usernameStyle]);
+  }, [currentMessage, usernameStyle]);
 
   const renderTime = useCallback(() => {
     if (currentMessage.createdAt) {

@@ -1,6 +1,13 @@
 import { StyleSheet, View, Text, TouchableOpacity, Modal } from 'react-native';
-import { Users, Settings, UserPlus } from 'lucide-react-native';
+import { Users, Settings, UserPlus, LucideIcon } from 'lucide-react-native';
 import { COLORS, SPACING } from '@/src/lib/constants';
+
+interface MenuAction {
+  id: 'viewVendors' | 'inviteUsers' | 'eventSettings';
+  label: string;
+  icon: LucideIcon;
+  onPress: () => void;
+}
 
 interface MenuModalProps {
   visible: boolean;
@@ -17,6 +24,31 @@ export function MenuModal({
   onInviteUsers, 
   onEventSettings 
 }: MenuModalProps) {
+  const menuActions: MenuAction[] = [
+    {
+      id: 'viewVendors',
+      label: 'View Vendors',
+      icon: Users,
+      onPress: onViewVendors,
+    },
+    {
+      id: 'inviteUsers',
+      label: 'Invite Users',
+      icon: UserPlus,
+      onPress: onInviteUsers,
+    },
+    {
+      id: 'eventSettings',
+      label: 'Event Settings',
+      icon: Settings,
+      onPress: onEventSettings,
+    },
+  ];
+
+  const handleMenuItemPress = (action: MenuAction): void => {
+    action.onPress();
+  };
+
   return (
     <Modal
       visible={visible}
@@ -30,20 +62,16 @@ export function MenuModal({
         onPress={onClose}
       >
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={styles.menuItem} onPress={onViewVendors}>
-            <Users size={20} color={COLORS.gray[700]} />
-            <Text style={styles.menuItemText}>View Vendors</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem} onPress={onInviteUsers}>
-            <UserPlus size={20} color={COLORS.gray[700]} />
-            <Text style={styles.menuItemText}>Invite Users</Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity style={styles.menuItem} onPress={onEventSettings}>
-            <Settings size={20} color={COLORS.gray[700]} />
-            <Text style={styles.menuItemText}>Event Settings</Text>
-          </TouchableOpacity>
+          {menuActions.map((action) => (
+            <TouchableOpacity 
+              key={action.id}
+              style={styles.menuItem} 
+              onPress={() => handleMenuItemPress(action)}
+            >
+              <action.icon size={20} color={COLORS.gray[700]} />
+              <Text style={styles.menuItemText}>{action.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </TouchableOpacity>
     </Modal>
