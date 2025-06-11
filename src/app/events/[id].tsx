@@ -11,7 +11,6 @@ import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
 import { useGetEvent } from '@/src/services/service-hooks/useGetEvent';
 import { useGetUsersInEvent } from '@/src/services/service-hooks/useGetUsersInEvent';
-import { useGetCategoriesForUser } from '@/src/services/service-hooks/useGetCategoriesForUser';
 import { getCategoriesForUser, getUserProfile } from '@/src/services/firestoreQueries';
 
 export default function EventDetailScreen() {
@@ -64,7 +63,7 @@ export default function EventDetailScreen() {
             getUserProfile(member.userId),
             getCategoriesForUser(eventId, member.userId)
           ]);
-          
+
           return {
             ...member,
             ...userProfile,
@@ -256,16 +255,17 @@ export default function EventDetailScreen() {
             </TouchableOpacity>
           </View>
 
-          {vendorData.length === 0 ? (
-            <View style={styles.emptyVendorsContainer}>
-              <Text style={styles.emptyVendorsText}>No vendors have joined this event yet.</Text>
-            </View>
-          ) : (
-            <>
+          <View style={styles.vendorsModalContent}>
+            {vendorData.length === 0 ? (
+              <View style={styles.emptyVendorsContainer}>
+                <Text style={styles.emptyVendorsText}>No vendors have joined this event yet.</Text>
+              </View>
+            ) : (
               <FlatList
                 data={vendorData}
                 keyExtractor={(item, index) => `${item.userId || item.id}-${index}`}
                 contentContainerStyle={styles.vendorsList}
+                showsVerticalScrollIndicator={true}
                 renderItem={({ item }) => (
                   <Card variant="outlined" style={styles.vendorCard}>
                     <View style={styles.vendorInfo}>
@@ -285,31 +285,33 @@ export default function EventDetailScreen() {
                   </Card>
                 )}
               />
+            )}
+          </View>
 
-              <View style={styles.copyButtonsContainer}>
-                <Button
-                  title="Copy IG handles"
-                  onPress={copyInstagramHandles}
-                  variant="outline"
-                  size="medium"
-                  style={styles.copyButton}
-                />
-                <Button
-                  title="Copy FB handles"
-                  onPress={copyFacebookHandles}
-                  variant="outline"
-                  size="medium"
-                  style={styles.copyButton}
-                />
-                <Button
-                  title="Copy emails"
-                  onPress={copyEmails}
-                  variant="outline"
-                  size="medium"
-                  style={styles.copyButton}
-                />
-              </View>
-            </>
+          {vendorData.length > 0 && (
+            <View style={styles.copyButtonsContainer}>
+              <Button
+                title="Copy IG handles"
+                onPress={copyInstagramHandles}
+                variant="outline"
+                size="medium"
+                style={styles.copyButton}
+              />
+              <Button
+                title="Copy FB handles"
+                onPress={copyFacebookHandles}
+                variant="outline"
+                size="medium"
+                style={styles.copyButton}
+              />
+              <Button
+                title="Copy emails"
+                onPress={copyEmails}
+                variant="outline"
+                size="medium"
+                style={styles.copyButton}
+              />
+            </View>
           )}
         </SafeAreaView>
       </Modal>
@@ -399,6 +401,9 @@ const styles = StyleSheet.create({
   vendorsModalContainer: {
     flex: 1,
     backgroundColor: 'white',
+    paddingBottom: SPACING.xxl,
+    marginBottom: SPACING.m,
+    borderWidth: 1,
   },
   vendorsModalHeader: {
     flexDirection: 'row',
@@ -418,6 +423,9 @@ const styles = StyleSheet.create({
   closeButton: {
     padding: 4,
   },
+  vendorsModalContent: {
+    flex: 1,
+  },
   emptyVendorsContainer: {
     flex: 1,
     justifyContent: 'center',
@@ -432,7 +440,7 @@ const styles = StyleSheet.create({
   },
   vendorsList: {
     padding: SPACING.m,
-    paddingBottom: SPACING.s,
+    paddingBottom: SPACING.l,
   },
   vendorCard: {
     marginBottom: SPACING.m,
@@ -468,6 +476,7 @@ const styles = StyleSheet.create({
   copyButtonsContainer: {
     padding: SPACING.m,
     paddingTop: SPACING.s,
+    paddingBottom: SPACING.m,
     borderTopWidth: 1,
     borderTopColor: COLORS.gray[200],
     backgroundColor: 'white',
