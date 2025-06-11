@@ -1,34 +1,32 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { ArrowLeft, Menu, Users, Settings, UserPlus } from 'lucide-react-native';
-import { useActionSheet } from '@expo/react-native-action-sheet';
+import { ArrowLeft, Menu, Users, Settings, UserPlus, X } from 'lucide-react-native';
 import * as Clipboard from 'expo-clipboard';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { formatDate } from '@/src/lib/utils';
 import { ChatInterface } from '@/src/components/chat/ChatInterface';
-import { VendorsList } from '@/src/components/vendors/VendorsList';
+import { Button } from '@/src/components/ui/Button';
+import { Card } from '@/src/components/ui/Card';
 import { useGetEvent } from '@/src/services/service-hooks/useGetEvent';
 import { useGetUsersInEvent } from '@/src/services/service-hooks/useGetUsersInEvent';
-import { useGetCategoriesForEvent } from '@/src/services/service-hooks/useGetCategoriesForEvent';
 import { useGetCategoriesForUser } from '@/src/services/service-hooks/useGetCategoriesForUser';
-import { getCategoriesForUser } from '@/src/services/firestoreQueries';
+import { getCategoriesForUser, getUserProfile } from '@/src/services/firestoreQueries';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
-  console.log('id from params---------->', id);
   const eventId = Array.isArray(id) ? id[0] : id || '';
   const { data: event, isLoading: loading, error } = useGetEvent(eventId);
   const { data: eventUsers } = useGetUsersInEvent(eventId);
-  const { data: categories } = useGetCategoriesForEvent(eventId);
-  const { showActionSheetWithOptions } = useActionSheet();
 
   console.log('Event data:', { event, loading, error, eventId });
 
   const [threadParentId, setThreadParentId] = useState<string | null>(null);
   const [showThread, setShowThread] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [showVendorsModal, setShowVendorsModal] = useState(false);
+  const [vendorData, setVendorData] = useState<any[]>([]);
 
   const handleOpenThread = (parentId: string) => {
     setThreadParentId(parentId);
@@ -50,100 +48,80 @@ export default function EventDetailScreen() {
 
   const handleViewVendors = async () => {
     setShowMenu(false);
-    
+
     if (!eventUsers || eventUsers.length === 0) {
-      showActionSheetWithOptions(
-        {
-          options: ['Cancel'],
-          cancelButtonIndex: 0,
-          title: 'No Vendors',
-          message: 'No vendors have joined this event yet.'
-        },
-        () => {}
-      );
+      setVendorData([]);
+      setShowVendorsModal(true);
       return;
     }
 
-    // Prepare vendor data with categories
-    const vendorData = await Promise.all(
-      eventUsers.map(async (user: any) => {
+    console.log('eventUsers---------->', eventUsers[0]);
+    // Prepare vendor data with categories and full user profiles
+    const vendorsWithCategories = await Promise.all(
+      eventUsers.map(async (member: any) => {
         try {
-          const userCategories = await getCategoriesForUser(eventId, user.userId);
+          const [userProfile, userCategories] = await Promise.all([
+            getUserProfile(member.userId),
+            getCategoriesForUser(eventId, member.userId)
+          ]);
+          
           return {
-            ...user,
+            ...member,
+            ...userProfile,
             categories: userCategories || []
           };
-        } catch {
+        } catch (error) {
+          console.error('Error fetching vendor data:', error);
           return {
-            ...user,
-            categories: []
+            ...member,
+            displayName: 'Unknown User',
+            categories: [],
+            email: undefined,
+            social: {}
           };
         }
       })
     );
 
-    // Create vendor list for action sheet
-    const vendorOptions = vendorData.map((vendor: any) => {
-      const categoriesText = vendor.categories.length > 0 
-        ? ` (${vendor.categories.join(', ')})`
-        : '';
-      return `${vendor.displayName || 'Unknown Vendor'}${categoriesText}`;
-    });
+    setVendorData(vendorsWithCategories);
+    setShowVendorsModal(true);
+  };
 
-    const options = [
-      ...vendorOptions,
-      'Copy IG handles',
-      'Copy FB handles', 
-      'Copy emails',
-      'Cancel'
-    ];
+  const handleCloseVendorsModal = () => {
+    setShowVendorsModal(false);
+  };
 
-    const copyStartIndex = vendorOptions.length;
-    const cancelButtonIndex = options.length - 1;
+  const copyInstagramHandles = async () => {
+    const igHandles = vendorData
+      .filter((vendor: any) => vendor.social?.instagram)
+      .map((vendor: any) => `@${vendor.social.instagram.replace('@', '')}`)
+      .join('\n');
 
-    showActionSheetWithOptions(
-      {
-        options,
-        cancelButtonIndex,
-        title: 'Event Vendors',
-        destructiveButtonIndex: undefined,
-      },
-      async (buttonIndex?: number) => {
-        if (buttonIndex === undefined || buttonIndex === cancelButtonIndex) return;
-        
-        if (buttonIndex === copyStartIndex) {
-          // Copy IG handles
-          const igHandles = vendorData
-            .filter((vendor: any) => vendor.social?.instagram)
-            .map((vendor: any) => `@${vendor.social.instagram.replace('@', '')}`)
-            .join('\n');
-          
-          if (igHandles) {
-            await Clipboard.setStringAsync(igHandles);
-          }
-        } else if (buttonIndex === copyStartIndex + 1) {
-          // Copy FB handles
-          const fbHandles = vendorData
-            .filter((vendor: any) => vendor.social?.facebook)
-            .map((vendor: any) => vendor.social.facebook)
-            .join('\n');
-          
-          if (fbHandles) {
-            await Clipboard.setStringAsync(fbHandles);
-          }
-        } else if (buttonIndex === copyStartIndex + 2) {
-          // Copy emails
-          const emails = vendorData
-            .filter((vendor: any) => vendor.email)
-            .map((vendor: any) => vendor.email)
-            .join('\n');
-          
-          if (emails) {
-            await Clipboard.setStringAsync(emails);
-          }
-        }
-      }
-    );
+    if (igHandles) {
+      await Clipboard.setStringAsync(igHandles);
+    }
+  };
+
+  const copyFacebookHandles = async () => {
+    const fbHandles = vendorData
+      .filter((vendor: any) => vendor.social?.facebook)
+      .map((vendor: any) => vendor.social.facebook)
+      .join('\n');
+
+    if (fbHandles) {
+      await Clipboard.setStringAsync(fbHandles);
+    }
+  };
+
+  const copyEmails = async () => {
+    const emails = vendorData
+      .filter((vendor: any) => vendor.email)
+      .map((vendor: any) => vendor.email)
+      .join('\n');
+
+    if (emails) {
+      await Clipboard.setStringAsync(emails);
+    }
   };
 
   const handleEventSettings = () => {
@@ -197,7 +175,7 @@ export default function EventDetailScreen() {
             {event.eventName}
           </Text>
           <Text style={styles.subtitle}>
-            {formatDate(event.startDate)} - {formatDate(event.endDate)}
+            {event.startDate ? formatDate(event.startDate) : 'TBD'} - {event.endDate ? formatDate(event.endDate) : 'TBD'}
           </Text>
         </View>
         <TouchableOpacity
@@ -247,18 +225,93 @@ export default function EventDetailScreen() {
               <Users size={20} color={COLORS.gray[700]} />
               <Text style={styles.menuItemText}>View Vendors</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.menuItem} onPress={handleInviteUsers}>
               <UserPlus size={20} color={COLORS.gray[700]} />
               <Text style={styles.menuItemText}>Invite Users</Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity style={styles.menuItem} onPress={handleEventSettings}>
               <Settings size={20} color={COLORS.gray[700]} />
               <Text style={styles.menuItemText}>Event Settings</Text>
             </TouchableOpacity>
           </View>
         </TouchableOpacity>
+      </Modal>
+
+      <Modal
+        visible={showVendorsModal}
+        animationType="slide"
+        presentationStyle="pageSheet"
+        onRequestClose={handleCloseVendorsModal}
+      >
+        <SafeAreaView style={styles.vendorsModalContainer}>
+          <View style={styles.vendorsModalHeader}>
+            <Text style={styles.vendorsModalTitle}>Event Vendors</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={handleCloseVendorsModal}
+            >
+              <X size={24} color={COLORS.gray[600]} />
+            </TouchableOpacity>
+          </View>
+
+          {vendorData.length === 0 ? (
+            <View style={styles.emptyVendorsContainer}>
+              <Text style={styles.emptyVendorsText}>No vendors have joined this event yet.</Text>
+            </View>
+          ) : (
+            <>
+              <FlatList
+                data={vendorData}
+                keyExtractor={(item, index) => `${item.userId || item.id}-${index}`}
+                contentContainerStyle={styles.vendorsList}
+                renderItem={({ item }) => (
+                  <Card variant="outlined" style={styles.vendorCard}>
+                    <View style={styles.vendorInfo}>
+                      <Text style={styles.vendorName}>
+                        {item.displayName || 'Unknown Vendor'}
+                      </Text>
+                      {item.categories && item.categories.length > 0 && (
+                        <View style={styles.categoriesContainer}>
+                          {item.categories.map((category: string, index: number) => (
+                            <View key={index} style={styles.categoryBadge}>
+                              <Text style={styles.categoryText}>{category}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      )}
+                    </View>
+                  </Card>
+                )}
+              />
+
+              <View style={styles.copyButtonsContainer}>
+                <Button
+                  title="Copy IG handles"
+                  onPress={copyInstagramHandles}
+                  variant="outline"
+                  size="medium"
+                  style={styles.copyButton}
+                />
+                <Button
+                  title="Copy FB handles"
+                  onPress={copyFacebookHandles}
+                  variant="outline"
+                  size="medium"
+                  style={styles.copyButton}
+                />
+                <Button
+                  title="Copy emails"
+                  onPress={copyEmails}
+                  variant="outline"
+                  size="medium"
+                  style={styles.copyButton}
+                />
+              </View>
+            </>
+          )}
+        </SafeAreaView>
       </Modal>
     </SafeAreaView>
   );
@@ -342,5 +395,84 @@ const styles = StyleSheet.create({
   threadContainer: {
     flex: 1,
     backgroundColor: 'white',
+  },
+  vendorsModalContainer: {
+    flex: 1,
+    backgroundColor: 'white',
+  },
+  vendorsModalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.m,
+    paddingVertical: SPACING.m,
+    borderBottomWidth: 1,
+    borderBottomColor: COLORS.gray[200],
+  },
+  vendorsModalTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: COLORS.gray[800],
+    fontFamily: 'Inter-Bold',
+  },
+  closeButton: {
+    padding: 4,
+  },
+  emptyVendorsContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: SPACING.l,
+  },
+  emptyVendorsText: {
+    fontSize: 16,
+    color: COLORS.gray[600],
+    textAlign: 'center',
+    fontFamily: 'Inter-Regular',
+  },
+  vendorsList: {
+    padding: SPACING.m,
+    paddingBottom: SPACING.s,
+  },
+  vendorCard: {
+    marginBottom: SPACING.m,
+  },
+  vendorInfo: {
+    flex: 1,
+  },
+  vendorName: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: COLORS.gray[800],
+    marginBottom: 4,
+    fontFamily: 'Inter-SemiBold',
+  },
+  categoriesContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginTop: 4,
+  },
+  categoryBadge: {
+    backgroundColor: COLORS.primary[100],
+    paddingHorizontal: SPACING.s,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginRight: 4,
+    marginBottom: 4,
+  },
+  categoryText: {
+    fontSize: 12,
+    color: COLORS.primary[700],
+    fontFamily: 'Inter-Medium',
+  },
+  copyButtonsContainer: {
+    padding: SPACING.m,
+    paddingTop: SPACING.s,
+    borderTopWidth: 1,
+    borderTopColor: COLORS.gray[200],
+    backgroundColor: 'white',
+  },
+  copyButton: {
+    marginBottom: SPACING.s,
   },
 });

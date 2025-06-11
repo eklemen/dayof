@@ -25,7 +25,6 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
     // Convert Firestore messages to GiftedChat format
     return (messages ?? []).map(msg => {
       const userName = msg.author?.displayName || (msg.authorId === 'system' ? 'System' : 'User');
-      console.log('msg.author---------->', msg.author);
       return {
         _id: msg.messageId,
         text: (<Text>{msg.body}</Text>),
@@ -46,9 +45,7 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
     }
 
     const { text } = messages[0];
-    console.log('onSend: sending message---------->', { eventId, userId: user.id, text, parentId });
     const result = await sendMessage(eventId, user.id, text, parentId);
-    console.log('onSend: message sent result---------->', result);
   }, [user, eventId, parentId, sendMessage]);
 
   return (
@@ -88,7 +85,6 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
         onPressAvatar={(e) => console.log('onPressAvatar------->', e)}
         onPress={(context, message) => {
           console.log('onPress message bubble------->', message);
-          console.log('onPress message context------->', context);
           // Only open thread for root messages (not already in a thread)
           if (!parentId && onOpenThread) {
             onOpenThread(message._id);

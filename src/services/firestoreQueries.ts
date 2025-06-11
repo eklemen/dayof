@@ -235,12 +235,10 @@ export async function getEvent(eventId: string) {
   const eventDoc = await getDoc(doc(db, 'events', eventId));
 
   if (!eventDoc.exists()) {
-    console.log('Event doc doesnt exist-------->');
     return null;
   }
 
   const eventData = eventDoc.data()!;
-  console.log('eventDoc.data() eventData---------->', eventData);
   // Convert Firestore Timestamp → JS Date
   const startDate: Date | null = eventData.startDate
     ? (eventData.startDate as FirebaseFirestoreTypes.Timestamp).toDate()
@@ -265,7 +263,6 @@ export async function getEvent(eventId: string) {
     endDate,
     venue: fullVenue,
   };
-  console.log('builtResponse---------->', builtResponse);
   return builtResponse
 }
 
@@ -382,16 +379,16 @@ export async function joinEventWithCode(groupCode: string, userId: string) {
 // Get or create a conversation for an event
 export async function getOrCreateEventConversation(eventId: string) {
   const db = getFirestore();
-  
+
   // Check if conversation already exists for this event
   const conversationsQuery = query(
     collection(db, 'conversations'),
     where('eventId', '==', eventId),
     where('type', '==', 'event')
   );
-  
+
   const conversationSnapshot = await getDocs(conversationsQuery);
-  
+
   if (!conversationSnapshot.empty) {
     // Return existing conversation
     const conversationDoc = conversationSnapshot.docs[0];
@@ -400,7 +397,7 @@ export async function getOrCreateEventConversation(eventId: string) {
       ...conversationDoc.data()
     };
   }
-  
+
   // Create new conversation for the event
   const newConversationRef = doc(collection(db, 'conversations'));
   const conversationData = {
@@ -409,7 +406,7 @@ export async function getOrCreateEventConversation(eventId: string) {
     createdAt: serverTimestamp(),
     participantCount: 0
   };
-  
+
   await setDoc(newConversationRef, conversationData);
 
   // Add a welcome message to get the conversation started
@@ -422,7 +419,7 @@ export async function getOrCreateEventConversation(eventId: string) {
     mentions: [],
     createdAt: serverTimestamp()
   });
-  
+
   return {
     conversationId: newConversationRef.id,
     ...conversationData
@@ -437,7 +434,7 @@ export async function sendMessageToConversation(
   parentMessageId: string | null = null
 ) {
   const db = getFirestore();
-  
+
   // Extract mentions from the message body
   const mentionRegex = /@(\w+)/g;
   const mentions = [];
@@ -462,5 +459,36 @@ export async function sendMessageToConversation(
   return {
     messageId: messageRef.id,
     ...messageData
+  };
+}
+
+// Get user profile by userId
+export async function getUserProfile(userId: string) {
+  const db = getFirestore();
+  const userDoc = await getDoc(doc(db, 'users', userId));
+  
+  if (userDoc.exists()) {
+    const data = userDoc.data();
+    return {
+      userId: userDoc.id,
+      displayName: data?.displayName || 'Unknown User',
+      companyName: data?.companyName,
+      phone: data?.phone,
+      email: data?.email,
+      website: data?.website,
+      photoURL: data?.photoURL,
+      social: data?.social || {}
+    };
+  }
+  
+  return {
+    userId,
+    displayName: 'Unknown User',
+    companyName: undefined,
+    phone: undefined,
+    email: undefined,
+    website: undefined,
+    photoURL: undefined,
+    social: {}
   };
 }

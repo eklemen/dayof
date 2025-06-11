@@ -26,7 +26,7 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
   // Use React Query to fetch user data
   const userQueries = useGetUsers(authorIds);
 
-  // Use ref to track when to update messages  
+  // Use ref to track when to update messages
   const prevRawMessagesRef = useRef<any[]>([]);
   const prevUserDataRef = useRef<string>('');
 
@@ -108,9 +108,7 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
 
         // Get or create conversation for this event
         const conversation = await getOrCreateEventConversation(eventId);
-        console.log('conversation---------->', conversation);
         setConversationId(conversation.conversationId);
-        console.log('conversationId set to---------->', conversation.conversationId);
 
         const db = getFirestore();
 
@@ -125,7 +123,6 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
         // Set up real-time listener for messages only
         unsubscribe = onSnapshot(messagesQuery, (snapshot) => {
           try {
-            console.log('snapshot.docs.length---------->', snapshot.docs.length);
 
             // Store raw message data - React Query will handle user fetching
             const rawMessageData = snapshot.docs.map((messageDoc) => {
@@ -175,12 +172,9 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
     parentMessageId: string | null = null
   ) => {
     try {
-      console.log('sendMessage called with conversationId---------->', conversationId);
       if (!conversationId) {
-        console.log('conversationId is null, attempting to get/create conversation...');
         // If conversationId is not set, try to get/create it
         const conversation = await getOrCreateEventConversation(eventId);
-        console.log('got conversation in sendMessage---------->', conversation);
         setConversationId(conversation.conversationId);
 
         // Use the conversation ID directly for this send operation
