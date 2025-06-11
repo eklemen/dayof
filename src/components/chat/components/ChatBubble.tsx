@@ -131,6 +131,7 @@ const ChatBubble = (props: any) => {
   }, [props, user]);
 
   const renderUsername = useCallback(() => {
+    console.log('currentMessage---------->', currentMessage.user);
     const username = currentMessage.user.name;
     if (username) {
       if (props.renderUsername) return props.renderUsername(props);
