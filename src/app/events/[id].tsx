@@ -3,17 +3,26 @@ import { StyleSheet, View, Text, TouchableOpacity, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Menu, Users, Settings, UserPlus } from 'lucide-react-native';
+import { useActionSheet } from '@expo/react-native-action-sheet';
+import * as Clipboard from 'expo-clipboard';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { formatDate } from '@/src/lib/utils';
 import { ChatInterface } from '@/src/components/chat/ChatInterface';
 import { VendorsList } from '@/src/components/vendors/VendorsList';
 import { useGetEvent } from '@/src/services/service-hooks/useGetEvent';
+import { useGetUsersInEvent } from '@/src/services/service-hooks/useGetUsersInEvent';
+import { useGetCategoriesForEvent } from '@/src/services/service-hooks/useGetCategoriesForEvent';
+import { useGetCategoriesForUser } from '@/src/services/service-hooks/useGetCategoriesForUser';
+import { getCategoriesForUser } from '@/src/services/firestoreQueries';
 
 export default function EventDetailScreen() {
   const { id } = useLocalSearchParams();
   console.log('id from params---------->', id);
   const eventId = Array.isArray(id) ? id[0] : id || '';
   const { data: event, isLoading: loading, error } = useGetEvent(eventId);
+  const { data: eventUsers } = useGetUsersInEvent(eventId);
+  const { data: categories } = useGetCategoriesForEvent(eventId);
+  const { showActionSheetWithOptions } = useActionSheet();
 
   console.log('Event data:', { event, loading, error, eventId });
 
@@ -39,9 +48,102 @@ export default function EventDetailScreen() {
     setShowMenu(false);
   };
 
-  const handleViewVendors = () => {
+  const handleViewVendors = async () => {
     setShowMenu(false);
-    // Navigate to vendors view or show vendors modal
+    
+    if (!eventUsers || eventUsers.length === 0) {
+      showActionSheetWithOptions(
+        {
+          options: ['Cancel'],
+          cancelButtonIndex: 0,
+          title: 'No Vendors',
+          message: 'No vendors have joined this event yet.'
+        },
+        () => {}
+      );
+      return;
+    }
+
+    // Prepare vendor data with categories
+    const vendorData = await Promise.all(
+      eventUsers.map(async (user: any) => {
+        try {
+          const userCategories = await getCategoriesForUser(eventId, user.userId);
+          return {
+            ...user,
+            categories: userCategories || []
+          };
+        } catch {
+          return {
+            ...user,
+            categories: []
+          };
+        }
+      })
+    );
+
+    // Create vendor list for action sheet
+    const vendorOptions = vendorData.map((vendor: any) => {
+      const categoriesText = vendor.categories.length > 0 
+        ? ` (${vendor.categories.join(', ')})`
+        : '';
+      return `${vendor.displayName || 'Unknown Vendor'}${categoriesText}`;
+    });
+
+    const options = [
+      ...vendorOptions,
+      'Copy IG handles',
+      'Copy FB handles', 
+      'Copy emails',
+      'Cancel'
+    ];
+
+    const copyStartIndex = vendorOptions.length;
+    const cancelButtonIndex = options.length - 1;
+
+    showActionSheetWithOptions(
+      {
+        options,
+        cancelButtonIndex,
+        title: 'Event Vendors',
+        destructiveButtonIndex: undefined,
+      },
+      async (buttonIndex?: number) => {
+        if (buttonIndex === undefined || buttonIndex === cancelButtonIndex) return;
+        
+        if (buttonIndex === copyStartIndex) {
+          // Copy IG handles
+          const igHandles = vendorData
+            .filter((vendor: any) => vendor.social?.instagram)
+            .map((vendor: any) => `@${vendor.social.instagram.replace('@', '')}`)
+            .join('\n');
+          
+          if (igHandles) {
+            await Clipboard.setStringAsync(igHandles);
+          }
+        } else if (buttonIndex === copyStartIndex + 1) {
+          // Copy FB handles
+          const fbHandles = vendorData
+            .filter((vendor: any) => vendor.social?.facebook)
+            .map((vendor: any) => vendor.social.facebook)
+            .join('\n');
+          
+          if (fbHandles) {
+            await Clipboard.setStringAsync(fbHandles);
+          }
+        } else if (buttonIndex === copyStartIndex + 2) {
+          // Copy emails
+          const emails = vendorData
+            .filter((vendor: any) => vendor.email)
+            .map((vendor: any) => vendor.email)
+            .join('\n');
+          
+          if (emails) {
+            await Clipboard.setStringAsync(emails);
+          }
+        }
+      }
+    );
   };
 
   const handleEventSettings = () => {

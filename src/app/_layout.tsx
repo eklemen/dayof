@@ -8,6 +8,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import '@/src/styles/global.css'
 import { AuthProvider } from '@/src/hooks/useAuth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 const queryClient = new QueryClient()
 
 export default function RootLayout() {
@@ -42,7 +43,8 @@ export default function RootLayout() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <>
+        <ActionSheetProvider>
+          <>
           <Stack
             screenOptions={{
               headerShown: false,
@@ -67,7 +69,8 @@ export default function RootLayout() {
             <Stack.Screen name="+not-found" />
           </Stack>
           <StatusBar style="auto" />
-        </>
+          </>
+        </ActionSheetProvider>
       </AuthProvider>
     </QueryClientProvider>
   );
