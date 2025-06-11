@@ -25,14 +25,43 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
     // Convert Firestore messages to GiftedChat format
     return (messages ?? []).map(msg => {
       const userName = msg.author?.displayName || (msg.authorId === 'system' ? 'System' : 'User');
+      
+      // Console log to show all available user properties
+      if (msg.author && msg.authorId !== 'system') {
+        console.log('Available user properties for message author:', msg.author);
+      }
+      
+      // Example: Enhanced display name with company and Instagram handle
+      const enhancedDisplayName = (() => {
+        let displayName = userName;
+        
+        // Add company name if available
+        if (msg.author?.companyName) {
+          displayName += ` (${msg.author.companyName})`;
+        }
+        
+        return displayName;
+      })();
+
       return {
         _id: msg.messageId,
-        text: (<Text>{msg.body}</Text>),
+        text: msg.body,
         createdAt: new Date(msg.createdAt),
         user: {
           _id: msg.authorId,
-          name: userName,
+          name: enhancedDisplayName, // Using enhanced name with company
           avatar: msg.author?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=${msg.authorId === 'system' ? '6366f1' : '10b981'}&color=fff&size=128`,
+          // You can now access these additional properties:
+          companyName: msg.author?.companyName,
+          email: msg.author?.email,
+          phone: msg.author?.phone,
+          website: msg.author?.website,
+          social: msg.author?.social,
+          // Social handles from the social object:
+          instagramHandle: msg.author?.social?.instagram,
+          facebookHandle: msg.author?.social?.facebook,
+          youtubeHandle: msg.author?.social?.youtube,
+          tiktokHandle: msg.author?.social?.tiktok,
         },
       };
     });
@@ -45,7 +74,7 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
     }
 
     const { text } = messages[0];
-    const result = await sendMessage(eventId, user.id, text, parentId);
+    await sendMessage(eventId, user.id, String(text), parentId);
   }, [user, eventId, parentId, sendMessage]);
 
   return (
@@ -82,8 +111,8 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
         textInputStyle={styles.textInput}
         minInputToolbarHeight={60}
         bottomOffset={0}
-        onPressAvatar={(e) => console.log('onPressAvatar------->', e)}
-        onPress={(context, message) => {
+        onPressAvatar={(user) => console.log('onPressAvatar------->', user)}
+        onPress={(_, message) => {
           console.log('onPress message bubble------->', message);
           // Only open thread for root messages (not already in a thread)
           if (!parentId && onOpenThread) {
