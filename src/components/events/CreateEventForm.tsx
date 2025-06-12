@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { StyleSheet, View, Text, ScrollView } from 'react-native';
+import { StyleSheet, View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { router } from 'expo-router';
 import { Input } from '@/src/components/ui/Input';
 import { Button } from '@/src/components/ui/Button';
@@ -27,6 +27,7 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
   const { user } = useAuth();
   const createEventMutation = useCreateEvent();
   const [error, setError] = useState<string | null>(null);
+  const [isMultiDay, setIsMultiDay] = useState(false);
 
   const { control, handleSubmit, formState: { errors } } = useForm<EventFormValues>({
     defaultValues: {
@@ -48,16 +49,24 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
 
     // Simple date validation
     const start = new Date(data.startDate);
-    const end = new Date(data.endDate);
 
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      setError('Please enter valid dates in YYYY-MM-DD format');
+    if (isNaN(start.getTime())) {
+      setError('Please enter a valid start date in YYYY-MM-DD format');
       return;
     }
 
-    if (end < start) {
-      setError('End date cannot be before start date');
-      return;
+    if (isMultiDay) {
+      const end = new Date(data.endDate);
+
+      if (isNaN(end.getTime())) {
+        setError('Please enter a valid end date in YYYY-MM-DD format');
+        return;
+      }
+
+      if (end < start) {
+        setError('End date cannot be before start date');
+        return;
+      }
     }
 
     setError(null);
@@ -65,7 +74,7 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
     const eventData = {
       eventName: data.eventName,
       startDate: data.startDate,
-      endDate: data.endDate,
+      endDate: isMultiDay ? data.endDate : null,
       venueName: data.venueName || null,
       address: data.address || null,
       venuePhone: data.venuePhone || null,
@@ -83,7 +92,7 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
   return (
     <ScrollView style={styles.container}>
       <Card style={styles.card}>
-        <Text style={styles.title}>Create New Event</Text>
+        <Text style={styles.title}>Event Details</Text>
 
         {error && (
           <View style={styles.errorContainer}>
@@ -113,7 +122,7 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
           rules={{ required: 'Start date is required' }}
           render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
             <Input
-              label="Start Date *"
+              label={isMultiDay ? "Start Date *" : "Event Date *"}
               placeholder="YYYY-MM-DD"
               value={value}
               onChangeText={onChange}
@@ -123,21 +132,34 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
           )}
         />
 
-        <Controller
-          control={control}
-          name="endDate"
-          rules={{ required: 'End date is required' }}
-          render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
-            <Input
-              label="End Date *"
-              placeholder="YYYY-MM-DD"
-              value={value}
-              onChangeText={onChange}
-              onBlur={onBlur}
-              error={error?.message}
-            />
-          )}
-        />
+        <TouchableOpacity
+          style={styles.checkboxContainer}
+          onPress={() => setIsMultiDay(!isMultiDay)}
+          activeOpacity={0.7}
+        >
+          <View style={[styles.checkbox, isMultiDay && styles.checkboxChecked]}>
+            {isMultiDay && <View style={styles.checkboxInner} />}
+          </View>
+          <Text style={styles.checkboxLabel}>This event spans multiple days</Text>
+        </TouchableOpacity>
+
+        {isMultiDay && (
+          <Controller
+            control={control}
+            name="endDate"
+            rules={{ required: 'End date is required' }}
+            render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
+              <Input
+                label="End Date *"
+                placeholder="YYYY-MM-DD"
+                value={value}
+                onChangeText={onChange}
+                onBlur={onBlur}
+                error={error?.message}
+              />
+            )}
+          />
+        )}
 
         <Controller
           control={control}
@@ -237,5 +259,34 @@ const styles = StyleSheet.create({
   createButton: {
     flex: 1,
     marginLeft: SPACING.s,
+  },
+  checkboxContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: SPACING.m,
+    marginTop: -SPACING.s,
+  },
+  checkbox: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    borderWidth: 2,
+    borderColor: COLORS.primary[500],
+    marginRight: SPACING.s,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxChecked: {
+    backgroundColor: COLORS.primary[500],
+  },
+  checkboxInner: {
+    width: 10,
+    height: 10,
+    backgroundColor: 'white',
+    borderRadius: 2,
+  },
+  checkboxLabel: {
+    fontSize: 14,
+    color: COLORS.gray[700],
   },
 });
