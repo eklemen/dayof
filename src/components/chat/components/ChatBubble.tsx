@@ -100,16 +100,8 @@ const ChatBubble = (props: ChatBubbleProps) => {
         <MessageText
           {...props}
           textStyle={{
-            left: [
-              styles.standardFont,
-              styles.messageText,
-              props.textStyle?.left,
-            ],
-            right: [
-              styles.standardFont,
-              styles.messageText,
-              props.textStyle?.right,
-            ],
+            left: [styles.standardFont, styles.messageText, props.textStyle?.left],
+            right: [styles.standardFont, styles.messageText, props.textStyle?.right],
           }}
         />
       );
@@ -122,12 +114,7 @@ const ChatBubble = (props: ChatBubbleProps) => {
     if (currentMessage.image) {
       if (props.renderMessageImage) return props.renderMessageImage(props);
 
-      return (
-        <MessageImage
-          {...props}
-          imageStyle={[styles.image, props.imageStyle]}
-        />
-      );
+      return <MessageImage {...props} imageStyle={[styles.image, props.imageStyle]} />;
     }
 
     return null;
@@ -157,20 +144,15 @@ const ChatBubble = (props: ChatBubbleProps) => {
   }, [props, user]);
 
   const renderUsername = useCallback((): React.ReactNode => {
-    console.log('currentMessage---------->', currentMessage.user);
     const username = currentMessage.user.name;
     if (username) {
       return (
-        <Text
-          style={[
-            styles.standardFont,
-            styles.headerItem,
-            styles.username,
-            usernameStyle,
-          ]}
-        >
-          {username}
-        </Text>
+        <View>
+          <Text style={[styles.standardFont, styles.headerItem, styles.username, usernameStyle]}>
+            {username}
+          </Text>
+          <Text style={{ color: COLORS.gray[500], fontSize: 12 }}>CompanyName</Text>
+        </View>
       );
     }
     return null;
@@ -185,18 +167,8 @@ const ChatBubble = (props: ChatBubbleProps) => {
           {...props}
           containerStyle={{ left: [styles.timeContainer] }}
           textStyle={{
-            left: [
-              styles.standardFont,
-              styles.headerItem,
-              styles.time,
-              props.textStyle?.left,
-            ],
-            right: [
-              styles.standardFont,
-              styles.headerItem,
-              styles.time,
-              props.textStyle?.right,
-            ],
+            left: [styles.standardFont, styles.headerItem, styles.time, props.textStyle?.left],
+            right: [styles.standardFont, styles.headerItem, styles.time, props.textStyle?.right],
           }}
         />
       );
@@ -206,9 +178,7 @@ const ChatBubble = (props: ChatBubbleProps) => {
   }, [currentMessage, props]);
 
   const isSameThread = useMemo(
-    () =>
-      isSameUser(currentMessage, previousMessage) &&
-      isSameDay(currentMessage, previousMessage),
+    () => isSameUser(currentMessage, previousMessage) && isSameDay(currentMessage, previousMessage),
     [currentMessage, previousMessage]
   );
 
@@ -286,6 +256,7 @@ const styles = StyleSheet.create({
     marginTop: Platform.OS === 'android' ? -2 : 0,
     flexDirection: 'row',
     alignItems: 'baseline',
+    justifyContent: 'space-between',
   },
   tick: {
     backgroundColor: 'transparent',

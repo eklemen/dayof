@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   Image,
   Text,
@@ -8,20 +8,12 @@ import {
   StyleProp,
   ImageStyle,
   TextStyle,
-} from 'react-native'
-import Color from './Color'
-import { User } from './types'
-import stylesCommon from './styles'
+} from 'react-native';
+import Color from './Color';
+import { User } from './types';
+import stylesCommon from './styles';
 
-const {
-  carrot,
-  emerald,
-  peterRiver,
-  wisteria,
-  alizarin,
-  turquoise,
-  midnightBlue,
-} = Color
+const { carrot, emerald, peterRiver, wisteria, alizarin, turquoise, midnightBlue } = Color;
 
 const styles = StyleSheet.create({
   avatarStyle: {
@@ -38,116 +30,85 @@ const styles = StyleSheet.create({
     backgroundColor: Color.backgroundTransparent,
     fontWeight: '100',
   },
-})
+});
 
 export interface GiftedAvatarProps {
-  user?: User
-  avatarStyle?: StyleProp<ImageStyle>
-  textStyle?: StyleProp<TextStyle>
-  onPress?: (props: GiftedAvatarProps) => void
-  onLongPress?: (props: GiftedAvatarProps) => void
+  user?: User;
+  avatarStyle?: StyleProp<ImageStyle>;
+  textStyle?: StyleProp<TextStyle>;
+  onPress?: (props: GiftedAvatarProps) => void;
+  onLongPress?: (props: GiftedAvatarProps) => void;
 }
 
-export function GiftedAvatar (
-  props: GiftedAvatarProps
-) {
-  const [avatarName, setAvatarName] = useState<string | undefined>(undefined)
-  const [backgroundColor, setBackgroundColor] = useState<string | undefined>(undefined)
+export function GiftedAvatar(props: GiftedAvatarProps) {
+  const [avatarName, setAvatarName] = useState<string | undefined>(undefined);
+  const [backgroundColor, setBackgroundColor] = useState<string | undefined>(undefined);
 
-  const {
-    user,
-    avatarStyle,
-    textStyle,
-    onPress,
-  } = props
+  const { user, avatarStyle, textStyle, onPress } = props;
 
   const setAvatarColor = useCallback(() => {
-    if (backgroundColor)
-      return
+    if (backgroundColor) return;
 
-    const userName = user?.name || ''
-    const name = userName.toUpperCase().split(' ')
+    const userName = user?.name || '';
+    if (typeof user?.name === 'string') {
+      const name = userName.toUpperCase().split(' ');
 
-    if (name.length === 1)
-      setAvatarName(`${name[0].charAt(0)}`)
-    else if (name.length > 1)
-      setAvatarName(`${name[0].charAt(0)}${name[1].charAt(0)}`)
-    else
-      setAvatarName('')
-
-    let sumChars = 0
-    for (let i = 0; i < userName.length; i += 1)
-      sumChars += userName.charCodeAt(i)
+      if (name.length === 1) setAvatarName(`${name[0].charAt(0)}`);
+      else if (name.length > 1) setAvatarName(`${name[0].charAt(0)}${name[1].charAt(0)}`);
+      else setAvatarName('');
+    }
+    let sumChars = 0;
+    for (let i = 0; i < userName.length; i += 1) sumChars += userName.charCodeAt(i);
 
     // inspired by https://github.com/wbinnssmith/react-user-avatar
     // colors from https://flatuicolors.com/
-    const colors = [
-      carrot,
-      emerald,
-      peterRiver,
-      wisteria,
-      alizarin,
-      turquoise,
-      midnightBlue,
-    ]
+    const colors = [carrot, emerald, peterRiver, wisteria, alizarin, turquoise, midnightBlue];
 
-    setBackgroundColor(colors[sumChars % colors.length])
-  }, [user?.name, backgroundColor])
+    setBackgroundColor(colors[sumChars % colors.length]);
+  }, [user?.name, backgroundColor]);
 
   const renderAvatar = useCallback(() => {
     switch (typeof user?.avatar) {
       case 'function':
-        return user.avatar([stylesCommon.centerItems, styles.avatarStyle, avatarStyle])
+        return user.avatar([stylesCommon.centerItems, styles.avatarStyle, avatarStyle]);
       case 'string':
         return (
           <Image
             source={{ uri: user.avatar }}
             style={[stylesCommon.centerItems, styles.avatarStyle, avatarStyle]}
           />
-        )
+        );
       case 'number':
         return (
           <Image
             source={user.avatar}
             style={[stylesCommon.centerItems, styles.avatarStyle, avatarStyle]}
           />
-        )
+        );
       default:
-        return null
+        return null;
     }
-  }, [user, avatarStyle])
+  }, [user, avatarStyle]);
 
   const renderInitials = useCallback(() => {
-    return (
-      <Text style={[styles.textStyle, textStyle]}>
-        {avatarName}
-      </Text>
-    )
-  }, [textStyle, avatarName])
+    return <Text style={[styles.textStyle, textStyle]}>{avatarName}</Text>;
+  }, [textStyle, avatarName]);
 
   const handleOnPress = () => {
-    const {
-      onPress,
-      ...rest
-    } = props
+    const { onPress, ...rest } = props;
 
-    if (onPress)
-      onPress(rest)
-  }
+    if (onPress) onPress(rest);
+  };
 
   const handleOnLongPress = () => {
-    const {
-      onLongPress,
-      ...rest
-    } = props
+    const { onLongPress, ...rest } = props;
 
-    if (onLongPress)
-      onLongPress(rest)
-  }
+    if (onLongPress) onLongPress(rest);
+  };
 
   useEffect(() => {
-    setAvatarColor()
-  }, [setAvatarColor])
+    setAvatarColor();
+  }, [setAvatarColor]);
 
   if (!user || (!user.name && !user.avatar))
     // render placeholder
@@ -159,9 +120,9 @@ export function GiftedAvatar (
           styles.avatarTransparent,
           avatarStyle,
         ]}
-        accessibilityRole='image'
+        accessibilityRole="image"
       />
-    )
+    );
 
   if (user.avatar)
     return (
@@ -169,26 +130,21 @@ export function GiftedAvatar (
         disabled={!onPress}
         onPress={handleOnPress}
         onLongPress={handleOnLongPress}
-        accessibilityRole='image'
+        accessibilityRole="image"
       >
         {renderAvatar()}
       </TouchableOpacity>
-    )
+    );
 
   return (
     <TouchableOpacity
       disabled={!onPress}
       onPress={handleOnPress}
       onLongPress={handleOnLongPress}
-      style={[
-        stylesCommon.centerItems,
-        styles.avatarStyle,
-        { backgroundColor },
-        avatarStyle,
-      ]}
-      accessibilityRole='image'
+      style={[stylesCommon.centerItems, styles.avatarStyle, { backgroundColor }, avatarStyle]}
+      accessibilityRole="image"
     >
       {renderInitials()}
     </TouchableOpacity>
-  )
+  );
 }

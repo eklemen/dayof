@@ -12,7 +12,7 @@ import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 interface EventFormValues {
   eventName: string;
   startDate: string;
-  endDate: string;
+  endDate: string | null;
   venueName: string;
   address: string;
   venuePhone: string;
@@ -29,16 +29,20 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
   const [error, setError] = useState<string | null>(null);
   const [isMultiDay, setIsMultiDay] = useState(false);
 
-  const { control, handleSubmit, formState: { errors } } = useForm<EventFormValues>({
+  const {
+    control,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<EventFormValues>({
     defaultValues: {
       eventName: '',
       startDate: '',
       endDate: '',
       venueName: '',
       address: '',
-      venuePhone: ''
+      venuePhone: '',
     },
-    mode: 'onSubmit'
+    mode: 'onSubmit',
   });
 
   const onSubmit: SubmitHandler<EventFormValues> = async (data) => {
@@ -56,7 +60,7 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
     }
 
     if (isMultiDay) {
-      const end = new Date(data.endDate);
+      const end = data?.endDate ? new Date(data.endDate) : new Date();
 
       if (isNaN(end.getTime())) {
         setError('Please enter a valid end date in YYYY-MM-DD format');
@@ -122,7 +126,7 @@ export function CreateEventForm({ onSuccess, onError }: CreateEventFormProps = {
           rules={{ required: 'Start date is required' }}
           render={({ field: { onChange, onBlur, value }, fieldState: { error } }) => (
             <Input
-              label={isMultiDay ? "Start Date *" : "Event Date *"}
+              label={isMultiDay ? 'Start Date *' : 'Event Date *'}
               placeholder="YYYY-MM-DD"
               value={value}
               onChangeText={onChange}

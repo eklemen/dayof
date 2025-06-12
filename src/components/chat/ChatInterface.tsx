@@ -16,30 +16,35 @@ interface ChatInterfaceProps {
   onOpenThread?: (messageId: string) => void;
 }
 
-export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread }: ChatInterfaceProps) {
+export function ChatInterface({
+  eventId,
+  parentId = null,
+  onClose,
+  onOpenThread,
+}: ChatInterfaceProps) {
   const { user } = useAuth();
   const { messages, loading, sendMessage } = useMessages(eventId, parentId);
 
   // Memoize message conversion to prevent unnecessary re-renders
   const chatMessages = useMemo(() => {
     // Convert Firestore messages to GiftedChat format
-    return (messages ?? []).map(msg => {
+    return (messages ?? []).map((msg) => {
       const userName = msg.author?.displayName || (msg.authorId === 'system' ? 'System' : 'User');
-      
+
       // Console log to show all available user properties
       if (msg.author && msg.authorId !== 'system') {
         console.log('Available user properties for message author:', msg.author);
       }
-      
+
       // Example: Enhanced display name with company and Instagram handle
       const enhancedDisplayName = (() => {
         let displayName = userName;
-        
+        let companyName = '';
         // Add company name if available
         if (msg.author?.companyName) {
-          displayName += ` (${msg.author.companyName})`;
+          companyName = msg.author.companyName;
         }
-        
+
         return displayName;
       })();
 
@@ -49,8 +54,10 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
         createdAt: new Date(msg.createdAt),
         user: {
           _id: msg.authorId,
-          name: enhancedDisplayName, // Using enhanced name with company
-          avatar: msg.author?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=${msg.authorId === 'system' ? '6366f1' : '10b981'}&color=fff&size=128`,
+          name: userName, // Using enhanced name with company
+          avatar:
+            msg.author?.photoURL ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(userName)}&background=${msg.authorId === 'system' ? '6366f1' : '10b981'}&color=fff&size=128`,
           // You can now access these additional properties:
           companyName: msg.author?.companyName,
           email: msg.author?.email,
@@ -67,15 +74,18 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
     });
   }, [messages]);
 
-  const onSend = useCallback(async (messages: IMessage[] = []) => {
-    if (!user) {
-      console.log('onSend: no user found');
-      return;
-    }
+  const onSend = useCallback(
+    async (messages: IMessage[] = []) => {
+      if (!user) {
+        console.log('onSend: no user found');
+        return;
+      }
 
-    const { text } = messages[0];
-    await sendMessage(eventId, user.id, String(text), parentId);
-  }, [user, eventId, parentId, sendMessage]);
+      const { text } = messages[0];
+      await sendMessage(eventId, user.id, String(text), parentId);
+    },
+    [user, eventId, parentId, sendMessage]
+  );
 
   return (
     <View style={styles.container}>
@@ -94,7 +104,9 @@ export function ChatInterface({ eventId, parentId = null, onClose, onOpenThread 
         user={{
           _id: user?.id || 'unknown',
           name: user?.displayName || 'You',
-          avatar: user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'You')}&background=3b82f6&color=fff&size=128`,
+          avatar:
+            user?.photoURL ||
+            `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'You')}&background=3b82f6&color=fff&size=128`,
         }}
         renderMessage={SquareMessage}
         renderSend={Send}
