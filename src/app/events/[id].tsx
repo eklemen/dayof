@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type JSX } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, Modal } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -80,7 +80,12 @@ export default function EventDetailScreen(): JSX.Element {
           {error ? `Error: ${JSON.stringify(error)}` : 'No event data found'}
         </Text>
         <TouchableOpacity
-          style={{ marginTop: 16, padding: 12, backgroundColor: COLORS.primary[700], borderRadius: 8 }}
+          style={{
+            marginTop: 16,
+            padding: 12,
+            backgroundColor: COLORS.primary[700],
+            borderRadius: 8,
+          }}
           onPress={() => router.back()}
         >
           <Text style={{ color: 'white', textAlign: 'center' }}>Go Back</Text>
@@ -89,13 +94,12 @@ export default function EventDetailScreen(): JSX.Element {
     );
   }
 
+  const formattedEndDate = event.endDate ? ` - ${formatDate(event.endDate)}` : '';
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={() => router.back()}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
           <ArrowLeft size={24} color="white" />
         </TouchableOpacity>
         <View style={styles.titleContainer}>
@@ -103,29 +107,20 @@ export default function EventDetailScreen(): JSX.Element {
             {event.eventName}
           </Text>
           <Text style={styles.subtitle}>
-            {event.startDate ? formatDate(event.startDate) : 'TBD'} - {event.endDate ? formatDate(event.endDate) : 'TBD'}
+            {event.startDate ? formatDate(event.startDate) : 'Date not set'}
+            {formattedEndDate}
           </Text>
         </View>
-        <TouchableOpacity
-          style={styles.menuButton}
-          onPress={handleMenuPress}
-        >
+        <TouchableOpacity style={styles.menuButton} onPress={handleMenuPress}>
           <Menu size={24} color="white" />
         </TouchableOpacity>
       </View>
 
       <View style={styles.content}>
-        <ChatInterface
-          eventId={eventId}
-          onOpenThread={handleOpenThread}
-        />
+        <ChatInterface eventId={eventId} onOpenThread={handleOpenThread} />
       </View>
 
-      <Modal
-        visible={showThread}
-        animationType="slide"
-        presentationStyle="pageSheet"
-      >
+      <Modal visible={showThread} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.threadContainer}>
           {threadParentId && (
             <ChatInterface
