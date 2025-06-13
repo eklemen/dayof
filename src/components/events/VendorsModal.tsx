@@ -1,4 +1,12 @@
-import { StyleSheet, View, Text, TouchableOpacity, Modal, FlatList, ListRenderItem } from 'react-native';
+import {
+  StyleSheet,
+  View,
+  Text,
+  TouchableOpacity,
+  Modal,
+  FlatList,
+  ListRenderItem,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
 import Toast from 'react-native-toast-message';
@@ -24,7 +32,7 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
 
   const copyInstagramHandles = async (): Promise<void> => {
     const igHandles = vendorData
-      .filter((vendor): vendor is VendorData & { social: { instagram: string } } => 
+      .filter((vendor): vendor is VendorData & { social: { instagram: string } } =>
         Boolean(vendor.social?.instagram)
       )
       .map((vendor) => `@${vendor.social.instagram.replace('@', '')}`)
@@ -40,7 +48,7 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
 
   const copyFacebookHandles = async (): Promise<void> => {
     const fbHandles = vendorData
-      .filter((vendor): vendor is VendorData & { social: { facebook: string } } => 
+      .filter((vendor): vendor is VendorData & { social: { facebook: string } } =>
         Boolean(vendor.social?.facebook)
       )
       .map((vendor) => vendor.social.facebook)
@@ -56,9 +64,7 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
 
   const copyEmails = async (): Promise<void> => {
     const emails = vendorData
-      .filter((vendor): vendor is VendorData & { email: string } => 
-        Boolean(vendor.email)
-      )
+      .filter((vendor): vendor is VendorData & { email: string } => Boolean(vendor.email))
       .map((vendor) => vendor.email)
       .join('\n');
 
@@ -73,9 +79,7 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
   const renderVendorItem: ListRenderItem<VendorData> = ({ item }) => (
     <Card variant="outlined" style={styles.vendorCard}>
       <View style={styles.vendorInfo}>
-        <Text style={styles.vendorName}>
-          {item.displayName || 'Unknown Vendor'}
-        </Text>
+        <Text style={styles.vendorName}>{item.displayName || 'Unknown Vendor'}</Text>
         {item.categories.length > 0 && (
           <View style={styles.categoriesContainer}>
             {item.categories.map((category, index) => (
@@ -99,10 +103,7 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
       <SafeAreaView style={styles.modalContainer}>
         <View style={styles.modalHeader}>
           <Text style={styles.modalTitle}>Event Vendors</Text>
-          <TouchableOpacity
-            style={styles.closeButton}
-            onPress={onClose}
-          >
+          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
             <X size={24} color={COLORS.gray[600]} />
           </TouchableOpacity>
         </View>
@@ -148,7 +149,6 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
             />
           </View>
         )}
-
       </SafeAreaView>
       <Toast />
     </Modal>
@@ -159,6 +159,7 @@ const styles = StyleSheet.create({
   modalContainer: {
     flex: 1,
     backgroundColor: 'white',
+    marginBottom: 100,
   },
   modalHeader: {
     flexDirection: 'row',

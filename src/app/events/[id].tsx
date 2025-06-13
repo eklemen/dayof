@@ -1,17 +1,50 @@
 import { useState, type JSX } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Modal } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Modal, FlatList } from 'react-native';
 import { useLocalSearchParams, router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { ArrowLeft, Menu } from 'lucide-react-native';
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { formatDate } from '@/src/lib/utils';
 import { ChatInterface } from '@/src/components/chat/ChatInterface';
+import { ThreadChat } from '@/src/components/chat/ThreadChat';
 import { VendorsModal } from '@/src/components/events/VendorsModal';
 import { MenuModal } from '@/src/components/events/MenuModal';
 import { useGetEvent } from '@/src/services/service-hooks/useGetEvent';
 import { useVendors } from '@/src/hooks/useVendors';
 import { Event } from '@/src/types/events';
 
+const DATA = [
+  {
+    id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
+    title: 'First Item',
+  },
+  {
+    id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
+    title: 'Second Item',
+  },
+  {
+    id: '58694a0f-3da1-471f-bd96-145571e29d72',
+    title: 'Third Item',
+  },
+  {
+    id: 'bd7acbea-c1b1-46c2-aed5-3ad53abb28ba',
+    title: '3 Item',
+  },
+  {
+    id: '3ac68afc-c605-48d3-a4f8-fbd91aa97f63',
+    title: '4 Item',
+  },
+  {
+    id: '58694a0f-3da1-471f-bd96-145571e29d72',
+    title: '5 Item',
+  },
+];
+
+const Item = ({ title }: Record<string, any>) => (
+  <View style={styles.item}>
+    <Text style={styles.title}>{title}</Text>
+  </View>
+);
 export default function EventDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams();
   const eventId: string = Array.isArray(id) ? id[0] : id || '';
@@ -123,9 +156,9 @@ export default function EventDetailScreen(): JSX.Element {
       <Modal visible={showThread} animationType="slide" presentationStyle="pageSheet">
         <SafeAreaView style={styles.threadContainer}>
           {threadParentId && (
-            <ChatInterface
+            <ThreadChat
               eventId={eventId}
-              parentId={threadParentId}
+              parentMessageId={threadParentId}
               onClose={handleCloseThread}
             />
           )}
@@ -153,6 +186,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: 'white',
+  },
+  item: {
+    backgroundColor: '#f9c2ff',
+    padding: 20,
+    marginVertical: 8,
+    marginHorizontal: 16,
   },
   loadingContainer: {
     flex: 1,
@@ -193,5 +232,6 @@ const styles = StyleSheet.create({
   threadContainer: {
     flex: 1,
     backgroundColor: 'white',
+    marginBottom: 100,
   },
 });

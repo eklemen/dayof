@@ -11,19 +11,15 @@ import { COLORS } from '@/src/lib/constants';
 
 interface ChatInterfaceProps {
   eventId: string;
-  parentId?: string | null;
-  onClose?: () => void;
   onOpenThread?: (messageId: string) => void;
 }
 
 export function ChatInterface({
   eventId,
-  parentId = null,
-  onClose,
   onOpenThread,
 }: ChatInterfaceProps) {
   const { user } = useAuth();
-  const { messages, loading, sendMessage } = useMessages(eventId, parentId);
+  const { messages, loading, sendMessage } = useMessages(eventId, null);
 
   // Memoize message conversion to prevent unnecessary re-renders
   const chatMessages = useMemo(() => {
@@ -82,22 +78,13 @@ export function ChatInterface({
       }
 
       const { text } = messages[0];
-      await sendMessage(eventId, user.id, String(text), parentId);
+      await sendMessage(eventId, user.id, String(text), null);
     },
-    [user, eventId, parentId, sendMessage]
+    [user, eventId, sendMessage]
   );
 
   return (
     <View style={styles.container}>
-      {parentId && onClose && (
-        <View style={styles.threadHeader}>
-          <Text style={styles.threadTitle}>Thread</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Text style={styles.closeButton}>Close</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-
       <GiftedChat
         messages={chatMessages}
         onSend={onSend}
@@ -126,8 +113,8 @@ export function ChatInterface({
         onPressAvatar={(user) => console.log('onPressAvatar------->', user)}
         onPress={(_, message) => {
           console.log('onPress message bubble------->', message);
-          // Only open thread for root messages (not already in a thread)
-          if (!parentId && onOpenThread) {
+          // Open thread for root messages
+          if (onOpenThread) {
             onOpenThread(message._id);
           }
         }}
@@ -159,24 +146,5 @@ const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 15,
     maxHeight: 150,
-  },
-  threadHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: COLORS.gray[200],
-    backgroundColor: 'white',
-  },
-  threadTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: COLORS.gray[800],
-  },
-  closeButton: {
-    fontSize: 16,
-    color: COLORS.primary[700],
-    fontWeight: '600',
   },
 });
