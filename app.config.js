@@ -6,17 +6,17 @@ export default {
     owner: 'ejklemen',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
-    scheme: 'vendorfriendr',
+    scheme: 'dayof',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
       bundleIdentifier: 'com.anonymous.dayof',
       googleServicesFile: './account-services/GoogleService-Info.plist',
-      associatedDomains: ['applinks:vendorfriendr.app'],
+      associatedDomains: ['applinks:dayof.app'],
       infoPlist: {
         CFBundleURLTypes: [
           {
-            CFBundleURLSchemes: ['vendorfriendr'],
+            CFBundleURLSchemes: ['dayof'],
           },
           {
             // Add Facebook client ID scheme for Facebook authentication
@@ -28,7 +28,7 @@ export default {
     web: {
       bundler: 'metro',
       output: 'single',
-      favicon: './assets/images/favicon.png'
+      favicon: './assets/images/favicon.png',
     },
     android: {
       package: 'com.anonymous.dayof',
@@ -39,7 +39,7 @@ export default {
           autoVerify: true,
           data: [
             {
-              scheme: 'vendorfriendr',
+              scheme: 'dayof',
             },
             {
               // Add Facebook client ID scheme for Facebook authentication
@@ -47,11 +47,11 @@ export default {
             },
             {
               scheme: 'https',
-              host: 'vendorfriendr.page.link',
+              host: 'dayof.page.link',
             },
             {
               scheme: 'https',
-              host: 'vendorfriendr.app',
+              host: 'dayof.app',
             },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
@@ -66,12 +66,9 @@ export default {
       [
         'expo-linking',
         {
-          scheme: 'vendorfriendr',
-          prefixes: [
-            'https://vendorfriendr.page.link',
-            'https://vendorfriendr.app'
-          ]
-        }
+          scheme: 'dayof',
+          prefixes: ['https://dayof.page.link', 'https://dayof.app'],
+        },
       ],
       '@react-native-firebase/app',
       '@react-native-firebase/auth',
@@ -79,14 +76,14 @@ export default {
       [
         'expo-build-properties',
         {
-          'ios': {
-            'useFrameworks': 'static'
-          }
-        }
-      ]
+          ios: {
+            useFrameworks: 'static',
+          },
+        },
+      ],
     ],
     experiments: {
-      typedRoutes: true
+      typedRoutes: true,
     },
     extra: {
       firebaseApiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -96,6 +93,6 @@ export default {
       firebaseMessagingSenderId: process.env.EXPO_PUBLIC_FIREBASE_MESSAGING_SENDER_ID,
       firebaseAppId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
       facebookAppId: process.env.EXPO_PUBLIC_FACEBOOK_APP_ID,
-    }
-  }
-}
+    },
+  },
+};
