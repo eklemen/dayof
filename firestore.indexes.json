@@ -45,6 +45,44 @@
           "order": "DESCENDING"
         }
       ]
+    },
+    {
+      "collectionGroup": "invites",
+      "queryScope": "COLLECTION_GROUP",
+      "fields": [
+        {
+          "fieldPath": "token",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "invites",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "status",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "expiresAt",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "invites",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "inviterUserId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "createdAt",
+          "order": "DESCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [

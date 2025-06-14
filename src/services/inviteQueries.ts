@@ -17,7 +17,7 @@ export const sendEventInvite = async (
   emails: string[]
 ): Promise<SendInviteResponse> => {
   try {
-    const sendInviteCallable = functions('sendEventInvite');
+    const sendInviteCallable = functions('sendEventInviteFunction');
     const result = await sendInviteCallable({
       eventId,
       emails
@@ -35,7 +35,7 @@ export const sendEventInvite = async (
  */
 export const validateInviteToken = async (token: string): Promise<InviteValidationResult> => {
   try {
-    const validateTokenCallable = functions('validateInviteToken');
+    const validateTokenCallable = functions('validateInviteTokenFunction');
     const result = await validateTokenCallable({ token });
 
     return result.data as InviteValidationResult;
@@ -53,7 +53,7 @@ export const validateInviteToken = async (token: string): Promise<InviteValidati
  */
 export const acceptInvite = async (token: string): Promise<{ success: boolean; eventId?: string; error?: string }> => {
   try {
-    const acceptInviteCallable = functions('acceptInvite');
+    const acceptInviteCallable = functions('acceptInviteFunction');
     const result = await acceptInviteCallable({ token });
 
     return result.data as { success: boolean; eventId?: string; error?: string };
@@ -68,7 +68,7 @@ export const acceptInvite = async (token: string): Promise<{ success: boolean; e
  */
 export const getInviteStats = async (userId: string) => {
   try {
-    const getStatsCallable = functions('getInviteStats');
+    const getStatsCallable = functions('getInviteStatsFunction');
     const result = await getStatsCallable({ userId });
 
     return result.data;

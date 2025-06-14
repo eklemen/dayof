@@ -1,9 +1,9 @@
-import * as functions from 'firebase-functions';
-import * as admin from 'firebase-admin';
-import * as crypto from 'crypto';
-
-// Regional functions for us-central1
-const regionalFunctions = functions.region('us-central1');
+import {onCall, HttpsError} from "firebase-functions/v2/https";
+import {onSchedule} from "firebase-functions/v2/scheduler";
+import {onDocumentWritten} from "firebase-functions/v2/firestore";
+import {onRequest} from "firebase-functions/v2/https";
+import * as admin from "firebase-admin";
+import * as crypto from "crypto";
 const db = admin.firestore();
 
 // Rate limiting constants
@@ -107,45 +107,49 @@ async function updateInviteStats(userId: string, inviteCount: number) {
 /**
  * Send event invites
  */
-export const sendEventInvite = regionalFunctions.https.onCall(async (data: SendInviteRequest, context) => {
+export const sendEventInvite = onCall({
+  region: "us-central1",
+}, async (request) => {
+  const {data, auth} = request;
+  
   // Validate authentication
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated');
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { eventId, emails } = data;
-  const userId = context.auth.uid;
+  const { eventId, emails } = data as SendInviteRequest;
+  const userId = auth.uid;
 
   // Validate input
   if (!eventId || !emails || !Array.isArray(emails) || emails.length === 0) {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid eventId or emails');
+    throw new HttpsError("invalid-argument", "Invalid eventId or emails");
   }
 
   // Validate emails
   const validEmails = emails.filter(email => isValidEmail(email));
   if (validEmails.length === 0) {
-    throw new functions.https.HttpsError('invalid-argument', 'No valid emails provided');
+    throw new HttpsError("invalid-argument", "No valid emails provided");
   }
 
   // Check if user owns the event
-  const eventDoc = await db.collection('events').doc(eventId).get();
+  const eventDoc = await db.collection("events").doc(eventId).get();
   if (!eventDoc.exists) {
-    throw new functions.https.HttpsError('not-found', 'Event not found');
+    throw new HttpsError("not-found", "Event not found");
   }
 
   const eventData = eventDoc.data()!;
   if (eventData.ownerId !== userId) {
-    throw new functions.https.HttpsError('permission-denied', 'Only event owner can send invites');
+    throw new HttpsError("permission-denied", "Only event owner can send invites");
   }
 
   // Check rate limits
   const { allowed, stats } = await checkRateLimit(userId);
   if (!allowed) {
-    throw new functions.https.HttpsError('resource-exhausted', 'Rate limit exceeded');
+    throw new HttpsError("resource-exhausted", "Rate limit exceeded");
   }
 
   if (validEmails.length > (RATE_LIMITS.MAX_INVITES_PER_HOUR - stats.invitesSentThisHour)) {
-    throw new functions.https.HttpsError('resource-exhausted', 'Would exceed hourly rate limit');
+    throw new HttpsError("resource-exhausted", "Would exceed hourly rate limit");
   }
 
   // Create invites
@@ -157,7 +161,7 @@ export const sendEventInvite = regionalFunctions.https.onCall(async (data: SendI
   );
 
   for (const email of validEmails) {
-    const inviteId = db.collection('events').doc(eventId).collection('invites').doc().id;
+    const inviteId = db.collection("events").doc(eventId).collection("invites").doc().id;
     const token = generateSecureToken();
 
     const inviteData: InviteData = {
@@ -165,13 +169,13 @@ export const sendEventInvite = regionalFunctions.https.onCall(async (data: SendI
       eventId,
       inviterUserId: userId,
       inviteeEmail: email.trim().toLowerCase(),
-      status: 'pending',
+      status: "pending",
       createdAt: now,
       expiresAt,
       token,
     };
 
-    const inviteRef = db.collection('events').doc(eventId).collection('invites').doc(inviteId);
+    const inviteRef = db.collection("events").doc(eventId).collection("invites").doc(inviteId);
     batch.set(inviteRef, inviteData);
 
     // TODO: Send email via SendGrid
@@ -200,22 +204,25 @@ export const sendEventInvite = regionalFunctions.https.onCall(async (data: SendI
 /**
  * Validate invite token
  */
-export const validateInviteToken = regionalFunctions.https.onCall(async (data: { token: string }, context) => {
-  const { token } = data;
+export const validateInviteToken = onCall({
+  region: "us-central1",
+}, async (request) => {
+  const {data} = request;
+  const { token } = data as { token: string };
 
-  if (!token || typeof token !== 'string' || token.length !== 64) {
-    return { valid: false, error: 'invalid-token' };
+  if (!token || typeof token !== "string" || token.length !== 64) {
+    return { valid: false, error: "invalid-token" };
   }
 
   try {
     // Query for invite with this token
-    const invitesQuery = await db.collectionGroup('invites')
-      .where('token', '==', token)
+    const invitesQuery = await db.collectionGroup("invites")
+      .where("token", "==", token)
       .limit(1)
       .get();
 
     if (invitesQuery.empty) {
-      return { valid: false, error: 'not-found' };
+      return { valid: false, error: "not-found" };
     }
 
     const inviteDoc = invitesQuery.docs[0];
@@ -224,18 +231,18 @@ export const validateInviteToken = regionalFunctions.https.onCall(async (data: {
 
     // Check if expired
     if (invite.expiresAt.toMillis() < now.toMillis()) {
-      return { valid: false, error: 'expired' };
+      return { valid: false, error: "expired" };
     }
 
     // Check if already used
-    if (invite.status === 'accepted') {
-      return { valid: false, error: 'already-used' };
+    if (invite.status === "accepted") {
+      return { valid: false, error: "already-used" };
     }
 
     // Get event and inviter details
     const [eventDoc, inviterDoc] = await Promise.all([
-      db.collection('events').doc(invite.eventId).get(),
-      db.collection('users').doc(invite.inviterUserId).get(),
+      db.collection("events").doc(invite.eventId).get(),
+      db.collection("users").doc(invite.inviterUserId).get(),
     ]);
 
     return {
@@ -249,35 +256,39 @@ export const validateInviteToken = regionalFunctions.https.onCall(async (data: {
       },
     };
   } catch (error) {
-    console.error('Error validating invite:', error);
-    return { valid: false, error: 'not-found' };
+    console.error("Error validating invite:", error);
+    return { valid: false, error: "not-found" };
   }
 });
 
 /**
  * Accept invite
  */
-export const acceptInvite = regionalFunctions.https.onCall(async (data: { token: string }, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated');
+export const acceptInvite = onCall({
+  region: "us-central1",
+}, async (request) => {
+  const {data, auth} = request;
+  
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { token } = data;
-  const userId = context.auth.uid;
+  const { token } = data as { token: string };
+  const userId = auth.uid;
 
-  if (!token || typeof token !== 'string') {
-    throw new functions.https.HttpsError('invalid-argument', 'Invalid token');
+  if (!token || typeof token !== "string") {
+    throw new HttpsError("invalid-argument", "Invalid token");
   }
 
   try {
     // Find invite
-    const invitesQuery = await db.collectionGroup('invites')
-      .where('token', '==', token)
+    const invitesQuery = await db.collectionGroup("invites")
+      .where("token", "==", token)
       .limit(1)
       .get();
 
     if (invitesQuery.empty) {
-      throw new functions.https.HttpsError('not-found', 'Invite not found');
+      throw new HttpsError("not-found", "Invite not found");
     }
 
     const inviteDoc = invitesQuery.docs[0];
@@ -286,11 +297,11 @@ export const acceptInvite = regionalFunctions.https.onCall(async (data: { token:
 
     // Validate invite
     if (invite.expiresAt.toMillis() < now.toMillis()) {
-      throw new functions.https.HttpsError('failed-precondition', 'Invite expired');
+      throw new HttpsError("failed-precondition", "Invite expired");
     }
 
-    if (invite.status === 'accepted') {
-      throw new functions.https.HttpsError('failed-precondition', 'Invite already used');
+    if (invite.status === "accepted") {
+      throw new HttpsError("failed-precondition", "Invite already used");
     }
 
     // Update invite status and add user to event
@@ -298,16 +309,16 @@ export const acceptInvite = regionalFunctions.https.onCall(async (data: { token:
 
     // Mark invite as accepted
     batch.update(inviteDoc.ref, {
-      status: 'accepted',
+      status: "accepted",
       acceptedAt: now,
     });
 
     // Add user as event member
-    const memberRef = db.collection('events').doc(invite.eventId).collection('members').doc(userId);
+    const memberRef = db.collection("events").doc(invite.eventId).collection("members").doc(userId);
     batch.set(memberRef, {
       userId,
       joinedAt: now,
-      role: 'member',
+      role: "member",
       invitedBy: invite.inviterUserId,
     });
 
@@ -318,26 +329,30 @@ export const acceptInvite = regionalFunctions.https.onCall(async (data: { token:
       eventId: invite.eventId,
     };
   } catch (error) {
-    console.error('Error accepting invite:', error);
-    if (error instanceof functions.https.HttpsError) {
+    console.error("Error accepting invite:", error);
+    if (error instanceof HttpsError) {
       throw error;
     }
-    throw new functions.https.HttpsError('internal', 'Failed to accept invite');
+    throw new HttpsError("internal", "Failed to accept invite");
   }
 });
 
 /**
  * Get invite statistics
  */
-export const getInviteStats = regionalFunctions.https.onCall(async (data: { userId: string }, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be authenticated');
+export const getInviteStats = onCall({
+  region: "us-central1",
+}, async (request) => {
+  const {data, auth} = request;
+  
+  if (!auth) {
+    throw new HttpsError("unauthenticated", "Must be authenticated");
   }
 
-  const { userId } = data;
+  const { userId } = data as { userId: string };
   
-  if (context.auth.uid !== userId) {
-    throw new functions.https.HttpsError('permission-denied', 'Can only get own stats');
+  if (auth.uid !== userId) {
+    throw new HttpsError("permission-denied", "Can only get own stats");
   }
 
   const { stats } = await checkRateLimit(userId);
@@ -352,79 +367,84 @@ export const getInviteStats = regionalFunctions.https.onCall(async (data: { user
 /**
  * Cleanup expired invites (scheduled function)
  */
-export const cleanupExpiredInvites = regionalFunctions.pubsub
-  .schedule('0 2 * * *') // Daily at 2 AM
-  .onRun(async (context) => {
-    const now = admin.firestore.Timestamp.now();
-    
-    // Find expired invites
-    const expiredQuery = await db.collectionGroup('invites')
-      .where('expiresAt', '<', now)
-      .where('status', '==', 'pending')
-      .get();
+export const cleanupExpiredInvites = onSchedule({
+  schedule: "0 2 * * *", // Daily at 2 AM
+  region: "us-central1",
+}, async (event) => {
+  const now = admin.firestore.Timestamp.now();
+  
+  // Find expired invites
+  const expiredQuery = await db.collectionGroup("invites")
+    .where("expiresAt", "<", now)
+    .where("status", "==", "pending")
+    .get();
 
-    if (expiredQuery.empty) {
-      console.log('No expired invites to clean up');
-      return null;
-    }
-
-    // Update expired invites
-    const batch = db.batch();
-    expiredQuery.docs.forEach(doc => {
-      batch.update(doc.ref, { status: 'expired' });
-    });
-
-    await batch.commit();
-    console.log(`Marked ${expiredQuery.size} invites as expired`);
-    
+  if (expiredQuery.empty) {
+    console.log("No expired invites to clean up");
     return null;
+  }
+
+  // Update expired invites
+  const batch = db.batch();
+  expiredQuery.docs.forEach(doc => {
+    batch.update(doc.ref, { status: "expired" });
+  });
+
+  await batch.commit();
+  console.log(`Marked ${expiredQuery.size} invites as expired`);
+  
+  return null;
   });
 
 /**
  * Reset invite stats (scheduled function)
  */
-export const resetInviteStats = regionalFunctions.pubsub
-  .schedule('0 0 * * *') // Daily at midnight
-  .onRun(async (context) => {
-    // This is handled automatically by checkRateLimit logic
-    console.log('Daily invite stats reset completed');
-    return null;
-  });
+export const resetInviteStats = onSchedule({
+  schedule: "0 0 * * *", // Daily at midnight
+  region: "us-central1",
+}, async (event) => {
+  // This is handled automatically by checkRateLimit logic
+  console.log("Daily invite stats reset completed");
+  return null;
+});
 
 /**
  * Update event invite statistics (Firestore trigger)
  */
-export const updateEventInviteStats = regionalFunctions.firestore
-  .document('/events/{eventId}/invites/{inviteId}')
-  .onWrite(async (change, context) => {
-    const eventId = context.params.eventId;
-    
-    // Count pending invites
-    const pendingQuery = await db.collection('events').doc(eventId).collection('invites')
-      .where('status', '==', 'pending')
-      .get();
+export const updateEventInviteStats = onDocumentWritten({
+  document: "/events/{eventId}/invites/{inviteId}",
+  region: "us-central1",
+}, async (event) => {
+  const eventId = event.params!.eventId;
+  
+  // Count pending invites
+  const pendingQuery = await db.collection("events").doc(eventId).collection("invites")
+    .where("status", "==", "pending")
+    .get();
 
-    // Get all invited emails
-    const allInvitesQuery = await db.collection('events').doc(eventId).collection('invites').get();
-    const invitedEmails = allInvitesQuery.docs.map(doc => doc.data().inviteeEmail);
+  // Get all invited emails
+  const allInvitesQuery = await db.collection("events").doc(eventId).collection("invites").get();
+  const invitedEmails = allInvitesQuery.docs.map(doc => doc.data().inviteeEmail);
 
-    // Update event document
-    await db.collection('events').doc(eventId).update({
-      pendingInvites: pendingQuery.size,
-      invitedEmails: invitedEmails,
-    });
-
-    console.log(`Updated event ${eventId} invite stats: ${pendingQuery.size} pending`);
-    return null;
+  // Update event document
+  await db.collection("events").doc(eventId).update({
+    pendingInvites: pendingQuery.size,
+    invitedEmails: invitedEmails,
   });
+
+  console.log(`Updated event ${eventId} invite stats: ${pendingQuery.size} pending`);
+  return null;
+});
 
 /**
  * Handle SendGrid webhook (placeholder)
  */
-export const handleSendGridWebhook = regionalFunctions.https.onRequest(async (req, res) => {
+export const handleSendGridWebhook = onRequest({
+  region: "us-central1",
+}, async (req, res) => {
   // TODO: Implement SendGrid webhook handling
   // Handle bounce/spam reports and update blockedEmails collection
   
-  console.log('SendGrid webhook received:', req.body);
-  res.status(200).send('OK');
+  console.log("SendGrid webhook received:", req.body);
+  res.status(200).send("OK");
 });
