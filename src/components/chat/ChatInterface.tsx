@@ -11,7 +11,7 @@ import { COLORS } from '@/src/lib/constants';
 
 interface ChatInterfaceProps {
   eventId: string;
-  onOpenThread?: (messageId: string) => void;
+  onOpenThread?: (message: any) => void;
 }
 
 export function ChatInterface({
@@ -115,7 +115,7 @@ export function ChatInterface({
           console.log('onPress message bubble------->', message);
           // Open thread for root messages
           if (onOpenThread) {
-            onOpenThread(message._id);
+            onOpenThread(message);
           }
         }}
       />

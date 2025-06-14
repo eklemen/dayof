@@ -11,20 +11,19 @@ import { COLORS } from '@/src/lib/constants';
 
 interface ThreadChatProps {
   eventId: string;
-  parentMessageId: string;
+  parentMessage: any;
   onClose: () => void;
 }
 
-export function ThreadChat({ eventId, parentMessageId, onClose }: ThreadChatProps) {
+export function ThreadChat({ eventId, parentMessage, onClose }: ThreadChatProps) {
   const { user } = useAuth();
-  const { messages, loading, sendMessage } = useMessages(eventId, parentMessageId);
+  const { messages, loading, sendMessage } = useMessages(eventId, parentMessage._id);
 
   // Memoize message conversion to prevent unnecessary re-renders
   const chatMessages = useMemo(() => {
-    // Convert Firestore messages to GiftedChat format
-    return (messages ?? []).map((msg) => {
+    // Convert thread messages
+    const threadMessages = (messages ?? []).map((msg) => {
       const userName = msg.author?.displayName || (msg.authorId === 'system' ? 'System' : 'User');
-
       return {
         _id: msg.messageId,
         text: msg.body,
@@ -47,7 +46,20 @@ export function ThreadChat({ eventId, parentMessageId, onClose }: ThreadChatProp
         },
       };
     });
-  }, [messages]);
+
+    // Add parent message at the beginning (last in array since GiftedChat is reversed)
+    if (parentMessage) {
+      const parentChatMessage = {
+        _id: parentMessage._id,
+        text: parentMessage.text,
+        createdAt: parentMessage.createdAt,
+        user: parentMessage.user,
+      };
+      return [...threadMessages, parentChatMessage];
+    }
+    
+    return threadMessages;
+  }, [messages, parentMessage]);
   console.log('chatMessages---------->', chatMessages);
   console.log('User object:', user);
 
@@ -59,9 +71,9 @@ export function ThreadChat({ eventId, parentMessageId, onClose }: ThreadChatProp
       }
 
       const { text } = messages[0];
-      await sendMessage(eventId, user.id, String(text), parentMessageId);
+      await sendMessage(eventId, user.id, String(text), parentMessage._id);
     },
-    [user, eventId, parentMessageId, sendMessage]
+    [user, eventId, parentMessage._id, sendMessage]
   );
 
   // Render empty chat state - fixed for inverted=false
