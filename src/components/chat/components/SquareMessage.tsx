@@ -1,8 +1,5 @@
 import React, { useCallback, useMemo } from 'react';
-import {
-  View,
-  StyleSheet,
-} from 'react-native';
+import { View, StyleSheet } from 'react-native';
 
 import { Avatar, Day, utils } from '@/src/lib/react-native-gifted-chat/src';
 import ChatBubble from './ChatBubble';
@@ -11,13 +8,7 @@ import { ThreadReplies } from './ThreadReplies';
 const { isSameUser, isSameDay } = utils;
 
 const SquareMessage = (props: any) => {
-  const {
-    currentMessage,
-    nextMessage,
-    previousMessage,
-    containerStyle,
-  } = props;
-
+  const { currentMessage, nextMessage, previousMessage } = props;
   const getInnerComponentProps = useCallback(() => {
     return {
       ...props,
@@ -32,8 +23,7 @@ const SquareMessage = (props: any) => {
     if (currentMessage.createdAt) {
       const dayProps = getInnerComponentProps();
 
-      if (props.renderDay)
-        return props.renderDay(dayProps);
+      if (props.renderDay) return props.renderDay(dayProps);
 
       return <Day {...dayProps} />;
     }
@@ -44,30 +34,25 @@ const SquareMessage = (props: any) => {
   const renderBubble = useCallback(() => {
     const bubbleProps = getInnerComponentProps();
 
-    if (props.renderBubble)
-      return props.renderBubble(bubbleProps);
+    if (props.renderBubble) return props.renderBubble(bubbleProps);
 
     return <ChatBubble {...bubbleProps} />;
   }, [getInnerComponentProps, props]);
 
   const renderAvatar = useCallback(() => {
     let extraStyle;
-    if (
-      isSameUser(currentMessage, previousMessage) &&
-      isSameDay(currentMessage, previousMessage)
-    )
+    if (isSameUser(currentMessage, previousMessage) && isSameDay(currentMessage, previousMessage))
       // Set the invisible avatar height to 0, but keep the width, padding, etc.
       extraStyle = { height: 0 };
 
     const avatarProps = getInnerComponentProps();
 
-    if (props.renderAvatar)
-      return props.renderAvatar(avatarProps);
+    if (props.renderAvatar) return props.renderAvatar(avatarProps);
 
     return (
       <Avatar
         {...avatarProps}
-        onPress={(e) => console.log('onPress------->', e)}
+        onPress={(e: any) => console.log('onPress------->', e)}
         imageStyle={{
           left: [styles.avatar, avatarProps.imageStyle, extraStyle],
         }}
@@ -75,22 +60,24 @@ const SquareMessage = (props: any) => {
     );
   }, [currentMessage, previousMessage, getInnerComponentProps, props]);
 
-  const marginBottom = useMemo(() =>
-      isSameUser(
-        currentMessage,
-        nextMessage
-      )
-        ? 2
-        : 10
-    , [currentMessage, nextMessage]);
+  const marginBottom = useMemo(
+    () => (isSameUser(currentMessage, nextMessage) ? 2 : 5),
+    [currentMessage, nextMessage]
+  );
 
   const renderThreadReplies = useCallback(() => {
     const replyCount = currentMessage.replyCount || 0;
+    console.log('SquareMessage renderThreadReplies:', {
+      messageId: currentMessage._id,
+      replyCount,
+      currentMessage,
+    });
+
     if (replyCount === 0) return null;
-    
+
     return (
-      <ThreadReplies 
-        replyCount={replyCount} 
+      <ThreadReplies
+        replyCount={replyCount}
         onPress={() => {
           if (props.onPress) {
             props.onPress(null, currentMessage);
@@ -101,15 +88,9 @@ const SquareMessage = (props: any) => {
   }, [currentMessage, props]);
 
   return (
-    <View>
+    <View style={{ marginBottom: 10 }}>
       {renderDay()}
-      <View
-        style={[
-          styles.container,
-          { marginBottom },
-          containerStyle,
-        ]}
-      >
+      <View style={[styles.container, { marginBottom }]}>
         {renderAvatar()}
         {renderBubble()}
       </View>

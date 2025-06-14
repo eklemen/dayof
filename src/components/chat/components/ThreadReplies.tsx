@@ -8,14 +8,12 @@ interface ThreadRepliesProps {
 }
 
 export function ThreadReplies({ replyCount, onPress }: ThreadRepliesProps) {
-  if (replyCount === 0) {
-    return null;
-  }
+  console.log('ThreadReplies component rendered with replyCount:', replyCount);
 
   const replyText = replyCount === 1 ? '1 reply' : `${replyCount} replies`;
 
   return (
-    <TouchableOpacity style={styles.container} onPress={onPress} activeOpacity={0.7}>
+    <TouchableOpacity style={styles.container} onPress={onPress}>
       <View style={styles.line} />
       <Text style={styles.text}>{replyText}</Text>
     </TouchableOpacity>
@@ -26,10 +24,9 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 4,
+    paddingBottom: 4,
     paddingHorizontal: 8,
-    marginTop: 4,
-    marginLeft: 44, // Align with message content, accounting for avatar
+    marginLeft: 64,
   },
   line: {
     width: 16,

@@ -34,6 +34,13 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
   }, [rawMessages, parentMessageId]);
 
   const { replyCounts } = useThreadReplyCounts(conversationId || '', rootMessageIds);
+  
+  // Debug logging
+  useEffect(() => {
+    if (replyCounts.size > 0) {
+      console.log('useMessages reply counts:', Array.from(replyCounts.entries()));
+    }
+  }, [replyCounts]);
 
   // Use ref to track when to update messages
   const prevRawMessagesRef = useRef<any[]>([]);

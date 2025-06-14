@@ -8,6 +8,8 @@ interface ThreadReplyCount {
 }
 
 export function useThreadReplyCounts(conversationId: string, rootMessageIds: string[]) {
+  console.log('useThreadReplyCounts called with:', { conversationId, rootMessageIds });
+  
   // Create queries for each root message to get its thread replies
   const replyQueries = useQueries({
     queries: rootMessageIds.map(messageId => ({
@@ -24,13 +26,19 @@ export function useThreadReplyCounts(conversationId: string, rootMessageIds: str
     
     replyQueries.forEach((query, index) => {
       const messageId = rootMessageIds[index];
-      if (query.data) {
-        counts.set(messageId, query.data.length);
-      } else {
-        counts.set(messageId, 0);
-      }
+      const replyCount = query.data ? query.data.length : 0;
+      counts.set(messageId, replyCount);
+      
+      console.log('Reply query result:', {
+        messageId,
+        replyCount,
+        queryData: query.data,
+        isLoading: query.isLoading,
+        error: query.error
+      });
     });
     
+    console.log('Final reply counts map:', Array.from(counts.entries()));
     return counts;
   }, [replyQueries, rootMessageIds]);
 

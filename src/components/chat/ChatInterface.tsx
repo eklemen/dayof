@@ -44,7 +44,7 @@ export function ChatInterface({
         return displayName;
       })();
 
-      return {
+      const chatMessage = {
         _id: msg.messageId,
         text: msg.body,
         createdAt: new Date(msg.createdAt),
@@ -69,6 +69,17 @@ export function ChatInterface({
         // Pass thread reply count for custom rendering
         replyCount: msg.replyCount,
       };
+      
+      // Debug logging
+      if (msg.replyCount && msg.replyCount > 0) {
+        console.log('ChatInterface message with replies:', {
+          messageId: msg.messageId,
+          replyCount: msg.replyCount,
+          body: msg.body
+        });
+      }
+      
+      return chatMessage;
     });
   }, [messages]);
 
