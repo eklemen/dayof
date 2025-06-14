@@ -2,15 +2,22 @@ import { useEffect, useState } from 'react';
 import { router, Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/src/hooks/useFrameworkReady';
-import { useFonts, Inter_400Regular, Inter_500Medium, Inter_600SemiBold, Inter_700Bold } from '@expo-google-fonts/inter';
+import {
+  useFonts,
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import { COLORS } from '@/src/lib/constants';
 import { Text, TouchableOpacity, View } from 'react-native';
-import '@/src/styles/global.css'
+import '@/src/styles/global.css';
 import { AuthProvider } from '@/src/hooks/useAuth';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ActionSheetProvider } from '@expo/react-native-action-sheet';
 import Toast from 'react-native-toast-message';
-const queryClient = new QueryClient()
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+const queryClient = new QueryClient();
 
 export default function RootLayout() {
   // Keep the framework ready hook
@@ -43,37 +50,51 @@ export default function RootLayout() {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <ActionSheetProvider>
-          <>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-              contentStyle: { backgroundColor: COLORS.gray[50] },
-            }}
-          >
-            <Stack.Screen name="login" options={{ headerShown: false }} />
-            <Stack.Screen name="register" options={{ headerShown: false }} />
-            <Stack.Screen name="enrollment-info" options={{ headerShown: false }} />
-            <Stack.Screen name="events/[id]" options={{ headerShown: false, headerLeft: () => (
-                <TouchableOpacity onPress={() => router.back()}>
-                  <Text>{`<`}</Text>
-                </TouchableOpacity>
-              ), }} />
-            <Stack.Screen name="events/create" options={{ headerShown: false, headerLeft: () => (
-                <TouchableOpacity onPress={() => router.back()}>
-                  <Text>{`<`}</Text>
-                </TouchableOpacity>
-              ), }} />
-            <Stack.Screen name="events/join" options={{ headerShown: false }} />
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-            <Stack.Screen name="+not-found" />
-          </Stack>
-          <StatusBar style="auto" />
-          </>
-        </ActionSheetProvider>
-        <Toast />
-      </AuthProvider>
+      <SafeAreaProvider>
+        <AuthProvider>
+          <ActionSheetProvider>
+            <>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  contentStyle: { backgroundColor: COLORS.gray[50] },
+                }}
+              >
+                <Stack.Screen name="login" options={{ headerShown: false }} />
+                <Stack.Screen name="register" options={{ headerShown: false }} />
+                <Stack.Screen name="enrollment-info" options={{ headerShown: false }} />
+                <Stack.Screen
+                  name="events/[id]"
+                  options={{
+                    headerShown: false,
+                    headerLeft: () => (
+                      <TouchableOpacity onPress={() => router.back()}>
+                        <Text>{`<`}</Text>
+                      </TouchableOpacity>
+                    ),
+                  }}
+                />
+                <Stack.Screen
+                  name="events/create"
+                  options={{
+                    headerShown: false,
+                    headerLeft: () => (
+                      <TouchableOpacity onPress={() => router.back()}>
+                        <Text>{`<`}</Text>
+                      </TouchableOpacity>
+                    ),
+                  }}
+                />
+                <Stack.Screen name="events/join" options={{ headerShown: false }} />
+                <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+                <Stack.Screen name="+not-found" />
+              </Stack>
+              <StatusBar style="auto" />
+            </>
+          </ActionSheetProvider>
+          <Toast />
+        </AuthProvider>
+      </SafeAreaProvider>
     </QueryClientProvider>
   );
 }

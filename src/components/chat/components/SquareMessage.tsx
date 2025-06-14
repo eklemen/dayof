@@ -6,6 +6,7 @@ import {
 
 import { Avatar, Day, utils } from '@/src/lib/react-native-gifted-chat/src';
 import ChatBubble from './ChatBubble';
+import { ThreadReplies } from './ThreadReplies';
 
 const { isSameUser, isSameDay } = utils;
 
@@ -83,6 +84,22 @@ const SquareMessage = (props: any) => {
         : 10
     , [currentMessage, nextMessage]);
 
+  const renderThreadReplies = useCallback(() => {
+    const replyCount = currentMessage.replyCount || 0;
+    if (replyCount === 0) return null;
+    
+    return (
+      <ThreadReplies 
+        replyCount={replyCount} 
+        onPress={() => {
+          if (props.onPress) {
+            props.onPress(null, currentMessage);
+          }
+        }}
+      />
+    );
+  }, [currentMessage, props]);
+
   return (
     <View>
       {renderDay()}
@@ -96,6 +113,7 @@ const SquareMessage = (props: any) => {
         {renderAvatar()}
         {renderBubble()}
       </View>
+      {renderThreadReplies()}
     </View>
   );
 };

@@ -13,4 +13,5 @@ export interface Message {
   reactions?: MessageReactionMap;
   mentions?: string[]; // userIds mentioned
   author?: Partial<UserProfile>
+  replyCount?: number; // Number of thread replies (only for root messages)
 }

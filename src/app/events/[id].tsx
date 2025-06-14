@@ -10,7 +10,6 @@ import { VendorsModal } from '@/src/components/events/VendorsModal';
 import { MenuModal } from '@/src/components/events/MenuModal';
 import { useGetEvent } from '@/src/services/service-hooks/useGetEvent';
 import { useVendors } from '@/src/hooks/useVendors';
-import { Event } from '@/src/types/events';
 
 export default function EventDetailScreen(): JSX.Element {
   const { id } = useLocalSearchParams();

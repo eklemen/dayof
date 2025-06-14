@@ -1,3 +1,5 @@
+// VendorsModal.tsx
+import React from 'react';
 import {
   StyleSheet,
   View,
@@ -7,10 +9,11 @@ import {
   FlatList,
   ListRenderItem,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { X } from 'lucide-react-native';
-import Toast from 'react-native-toast-message';
 import * as Clipboard from 'expo-clipboard';
+import Toast from 'react-native-toast-message';
+
 import { COLORS, SPACING } from '@/src/lib/constants';
 import { Button } from '@/src/components/ui/Button';
 import { Card } from '@/src/components/ui/Card';
@@ -21,75 +24,57 @@ interface VendorsModalProps {
   onClose: () => void;
   vendorData: VendorData[];
 }
+const BUTTON_BAR_HEIGHT = 100;
 
 export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps) {
-  const showCopyNotification = (message: string, type: ToastType = 'success'): void => {
-    Toast.show({
-      type,
-      text1: message,
-    });
-  };
+  const insets = useSafeAreaInsets();
 
-  const copyInstagramHandles = async (): Promise<void> => {
-    const igHandles = vendorData
-      .filter((vendor): vendor is VendorData & { social: { instagram: string } } =>
-        Boolean(vendor.social?.instagram)
-      )
-      .map((vendor) => `@${vendor.social.instagram.replace('@', '')}`)
-      .join('\n');
+  /* ---------- utilities ---------- */
+  const showToast = (msg: string, type: ToastType = 'success') => Toast.show({ type, text1: msg });
 
-    if (igHandles) {
-      await Clipboard.setStringAsync(igHandles);
-      showCopyNotification('Instagram handles copied!', 'success');
+  const copyHelper = async (list: string[], label: string) => {
+    if (list.length) {
+      await Clipboard.setStringAsync(list.join('\n'));
+      showToast(`${label} copied!`);
     } else {
-      showCopyNotification('No Instagram handles found', 'info');
+      showToast(`No ${label.toLowerCase()} found`, 'info');
     }
   };
 
-  const copyFacebookHandles = async (): Promise<void> => {
-    const fbHandles = vendorData
-      .filter((vendor): vendor is VendorData & { social: { facebook: string } } =>
-        Boolean(vendor.social?.facebook)
-      )
-      .map((vendor) => vendor.social.facebook)
-      .join('\n');
+  const copyInstagramHandles = () =>
+    copyHelper(
+      vendorData
+        .filter((v) => v.social?.instagram)
+        .map((v) => `@${v.social!.instagram.replace('@', '')}`),
+      'Instagram handles'
+    );
 
-    if (fbHandles) {
-      await Clipboard.setStringAsync(fbHandles);
-      showCopyNotification('Facebook handles copied!', 'success');
-    } else {
-      showCopyNotification('No Facebook handles found', 'info');
-    }
-  };
+  const copyFacebookHandles = () =>
+    copyHelper(
+      vendorData.filter((v) => v.social?.facebook).map((v) => v.social!.facebook),
+      'Facebook handles'
+    );
 
-  const copyEmails = async (): Promise<void> => {
-    const emails = vendorData
-      .filter((vendor): vendor is VendorData & { email: string } => Boolean(vendor.email))
-      .map((vendor) => vendor.email)
-      .join('\n');
+  const copyEmails = () =>
+    copyHelper(
+      vendorData.filter((v) => v.email).map((v) => v.email!),
+      'Email addresses'
+    );
 
-    if (emails) {
-      await Clipboard.setStringAsync(emails);
-      showCopyNotification('Email addresses copied!', 'success');
-    } else {
-      showCopyNotification('No email addresses found', 'info');
-    }
-  };
-
-  const renderVendorItem: ListRenderItem<VendorData> = ({ item }) => (
+  /* ---------- list render ---------- */
+  const renderVendor: ListRenderItem<VendorData> = ({ item }) => (
     <Card variant="outlined" style={styles.vendorCard}>
-      <View style={styles.vendorInfo}>
-        <Text style={styles.vendorName}>{item.displayName || 'Unknown Vendor'}</Text>
-        {item.categories.length > 0 && (
-          <View style={styles.categoriesContainer}>
-            {item.categories.map((category, index) => (
-              <View key={`${item.userId}-category-${index}`} style={styles.categoryBadge}>
-                <Text style={styles.categoryText}>{category}</Text>
-              </View>
-            ))}
-          </View>
-        )}
-      </View>
+      <Text style={styles.vendorName}>{item.displayName || 'Unknown Vendor'}</Text>
+
+      {item.categories.length > 0 && (
+        <View style={styles.categoriesRow}>
+          {item.categories.map((cat) => (
+            <View key={`${item.userId}-${cat}`} style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{cat}</Text>
+            </View>
+          ))}
+        </View>
+      )}
     </Card>
   );
 
@@ -98,70 +83,57 @@ export function VendorsModal({ visible, onClose, vendorData }: VendorsModalProps
       visible={visible}
       animationType="slide"
       presentationStyle="pageSheet"
+      statusBarTranslucent
       onRequestClose={onClose}
     >
-      <SafeAreaView style={styles.modalContainer}>
-        <View style={styles.modalHeader}>
-          <Text style={styles.modalTitle}>Event Vendors</Text>
-          <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-            <X size={24} color={COLORS.gray[600]} />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.modalContent}>
-          {vendorData.length === 0 ? (
-            <View style={styles.emptyContainer}>
+      <SafeAreaView edges={['top']} style={styles.container}>
+        {/* scrollable list */}
+        <FlatList
+          data={vendorData}
+          keyExtractor={(item, idx) => `${item.userId}-${idx}`}
+          renderItem={renderVendor}
+          contentContainerStyle={{
+            padding: SPACING.m,
+            paddingBottom: BUTTON_BAR_HEIGHT + insets.bottom + SPACING.m,
+          }}
+          ItemSeparatorComponent={() => <View style={{ height: SPACING.m }} />}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <Text style={styles.title}>Event Vendors</Text>
+              <TouchableOpacity onPress={onClose}>
+                <X size={24} color={COLORS.gray[600]} />
+              </TouchableOpacity>
+            </View>
+          }
+          ListEmptyComponent={
+            <View style={styles.empty}>
               <Text style={styles.emptyText}>No vendors have joined this event yet.</Text>
             </View>
-          ) : (
-            <FlatList
-              data={vendorData}
-              keyExtractor={(item, index) => `${item.userId}-${index}`}
-              contentContainerStyle={styles.vendorsList}
-              showsVerticalScrollIndicator={true}
-              renderItem={renderVendorItem}
-            />
-          )}
-        </View>
+          }
+        />
 
-        {vendorData.length > 0 && (
-          <View style={styles.copyButtonsContainer}>
-            <Button
-              title="Copy IG handles"
-              onPress={copyInstagramHandles}
-              variant="outline"
-              size="medium"
-              style={styles.copyButton}
-            />
-            <Button
-              title="Copy FB handles"
-              onPress={copyFacebookHandles}
-              variant="outline"
-              size="medium"
-              style={styles.copyButton}
-            />
-            <Button
-              title="Copy emails"
-              onPress={copyEmails}
-              variant="outline"
-              size="medium"
-              style={styles.copyButton}
-            />
-          </View>
-        )}
+        {/* sticky button bar */}
+        <View
+          style={[
+            styles.buttonBar,
+            { paddingBottom: insets.bottom || SPACING.m }, // safe-area pad
+          ]}
+        >
+          <Button title="Copy IG handles" onPress={copyInstagramHandles} variant="outline" />
+          <Button title="Copy FB handles" onPress={copyFacebookHandles} variant="outline" />
+          <Button title="Copy emails" onPress={copyEmails} variant="outline" />
+        </View>
       </SafeAreaView>
       <Toast />
     </Modal>
   );
 }
 
+/* ---------- styles ---------- */
 const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
-    backgroundColor: 'white',
-    marginBottom: 100,
-  },
-  modalHeader: {
+  container: { flex: 1, backgroundColor: 'white' },
+
+  header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -170,52 +142,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: COLORS.gray[200],
   },
-  modalTitle: {
+  title: {
     fontSize: 20,
     fontWeight: '700',
     color: COLORS.gray[800],
     fontFamily: 'Inter-Bold',
   },
-  closeButton: {
-    padding: 4,
-  },
-  modalContent: {
-    flex: 1,
-  },
-  emptyContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: SPACING.l,
-  },
+
+  empty: { paddingVertical: SPACING.l, alignItems: 'center' },
   emptyText: {
-    fontSize: 16,
     color: COLORS.gray[600],
+    fontSize: 16,
     textAlign: 'center',
     fontFamily: 'Inter-Regular',
   },
-  vendorsList: {
-    padding: SPACING.m,
-    paddingBottom: SPACING.l,
-  },
-  vendorCard: {
-    marginBottom: SPACING.m,
-  },
-  vendorInfo: {
-    flex: 1,
-  },
+
+  vendorCard: { padding: SPACING.m },
   vendorName: {
     fontSize: 16,
     fontWeight: '600',
     color: COLORS.gray[800],
-    marginBottom: 4,
     fontFamily: 'Inter-SemiBold',
   },
-  categoriesContainer: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginTop: 4,
-  },
+  categoriesRow: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 4 },
   categoryBadge: {
     backgroundColor: COLORS.primary[100],
     paddingHorizontal: SPACING.s,
@@ -229,15 +178,27 @@ const styles = StyleSheet.create({
     color: COLORS.primary[700],
     fontFamily: 'Inter-Medium',
   },
-  copyButtonsContainer: {
-    padding: SPACING.m,
-    paddingTop: SPACING.s,
-    paddingBottom: SPACING.m,
+
+  footer: {
+    marginTop: SPACING.l,
     borderTopWidth: 1,
     borderTopColor: COLORS.gray[200],
-    backgroundColor: 'white',
+    paddingTop: SPACING.m,
   },
-  copyButton: {
-    marginBottom: SPACING.s,
+  footerBtn: { marginBottom: SPACING.s },
+  buttonBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 150,
+    backgroundColor: 'white',
+    borderTopWidth: 1,
+    borderTopColor: COLORS.gray[200],
+    paddingHorizontal: SPACING.m,
+    paddingTop: SPACING.m,
+    flexDirection: 'column',
+    gap: SPACING.s,
+    height: BUTTON_BAR_HEIGHT,
+    zIndex: 100, // ensure above FlatList
   },
 });

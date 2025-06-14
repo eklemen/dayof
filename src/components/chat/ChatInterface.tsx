@@ -66,6 +66,8 @@ export function ChatInterface({
           youtubeHandle: msg.author?.social?.youtube,
           tiktokHandle: msg.author?.social?.tiktok,
         },
+        // Pass thread reply count for custom rendering
+        replyCount: msg.replyCount,
       };
     });
   }, [messages]);

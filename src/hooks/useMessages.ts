@@ -3,6 +3,7 @@ import { getFirestore, collection, query, where, orderBy, onSnapshot, doc, getDo
 import { getOrCreateEventConversation, sendMessageToConversation, addReaction as addReactionToMessage } from '@/src/services/firestoreQueries';
 import { Message } from '@/src/models/Message';
 import { useGetUsers } from '@/src/services/service-hooks/useGetUsers';
+import { useThreadReplyCounts } from './useThreadReplyCounts';
 
 // React Query now handles user caching, so we don't need manual cache
 
@@ -26,9 +27,18 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
   // Use React Query to fetch user data
   const userQueries = useGetUsers(authorIds);
 
+  // Get thread reply counts for root messages only
+  const rootMessageIds = useMemo(() => {
+    if (parentMessageId !== null) return []; // Don't get reply counts for thread messages
+    return rawMessages.map(msg => msg.messageId);
+  }, [rawMessages, parentMessageId]);
+
+  const { replyCounts } = useThreadReplyCounts(conversationId || '', rootMessageIds);
+
   // Use ref to track when to update messages
   const prevRawMessagesRef = useRef<any[]>([]);
   const prevUserDataRef = useRef<string>('');
+  const prevReplyCountsRef = useRef<string>('');
 
   // Process messages whenever raw messages or user data changes
   useEffect(() => {
@@ -41,22 +51,27 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
       }
     });
 
-    // Create a signature of current user data
+    // Create a signature of current user data and reply counts
     const currentUserDataSignature = JSON.stringify(
       Array.from(usersMap.entries()).sort()
     );
+    const currentReplyCountsSignature = JSON.stringify(
+      Array.from(replyCounts.entries()).sort()
+    );
 
-    // Check if we should update (either messages changed or user data changed)
+    // Check if we should update (messages, user data, or reply counts changed)
     const messagesChanged = JSON.stringify(rawMessages) !== JSON.stringify(prevRawMessagesRef.current);
     const userDataChanged = currentUserDataSignature !== prevUserDataRef.current;
+    const replyCountsChanged = currentReplyCountsSignature !== prevReplyCountsRef.current;
 
-    if (!messagesChanged && !userDataChanged) {
+    if (!messagesChanged && !userDataChanged && !replyCountsChanged) {
       return; // No changes, skip update
     }
 
     // Update refs
     prevRawMessagesRef.current = rawMessages;
     prevUserDataRef.current = currentUserDataSignature;
+    prevReplyCountsRef.current = currentReplyCountsSignature;
 
     if (rawMessages.length === 0) {
       setMessages([]);
@@ -71,9 +86,10 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
       return;
     }
 
-    // Combine messages with user data
+    // Combine messages with user data and reply counts
     const messagesWithAuthors = rawMessages.map((messageData) => {
       const author = usersMap.get(messageData.authorId);
+      const replyCount = replyCounts.get(messageData.messageId) || 0;
 
       const message: Message = {
         messageId: messageData.messageId,
@@ -85,7 +101,8 @@ export function useMessages(eventId?: string, parentMessageId: string | null = n
         parentMessageId: messageData.parentMessageId,
         reactions: messageData.reactions || {},
         mentions: messageData.mentions || [],
-        author: author
+        author: author,
+        replyCount: parentMessageId === null ? replyCount : undefined // Only include for root messages
       };
 
       return message;
