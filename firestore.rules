@@ -1,70 +1,8 @@
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users collection - basic read/write for authenticated users
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-      allow read: if request.auth != null; // Allow reading other users for invites
-    }
-
-    // Events collection
-    match /events/{eventId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.ownerId;
-      allow update: if request.auth != null 
-        && request.auth.uid == resource.data.ownerId
-        && !('pendingInvites' in request.resource.data) 
-        && !('invitedEmails' in request.resource.data); // Prevent manual updates to invite fields
-      allow delete: if request.auth != null && request.auth.uid == resource.data.ownerId;
-
-      // Invites subcollection
-      match /invites/{inviteId} {
-        // Only event owners can create invites, authenticated users can read
-        allow create: if request.auth != null 
-          && request.resource.data.inviterUserId == request.auth.uid;
-        allow read: if request.auth != null; // Or enforce via callable only
-        allow update, delete: if false; // Service-account Cloud Functions only
-      }
-
-      // Members subcollection
-      match /members/{memberId} {
-        allow read: if request.auth != null;
-        allow create: if request.auth != null;
-        allow update, delete: if request.auth != null && request.auth.uid == resource.data.userId;
-      }
-    }
-
-    // Conversations collection
-    match /conversations/{conversationId} {
-      allow read, write: if request.auth != null;
-
-      // Messages subcollection
-      match /messages/{messageId} {
-        allow read, write: if request.auth != null;
-      }
-    }
-
-    // Event categories collection
-    match /eventCategories/{categoryId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // User invite stats (for rate limiting)
-    match /users/{userId}/inviteStats/{statsId} {
-      allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false; // Cloud Functions only
-    }
-
-    // Blocked emails collection (for spam prevention)
-    match /blockedEmails/{emailHash} {
-      allow read: if false; // Cloud Functions only
-      allow write: if false; // Cloud Functions only
-    }
-
-    // Deny all other reads/writes
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }
