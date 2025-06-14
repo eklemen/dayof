@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { router, Stack } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { StatusBar } from 'expo-status-bar';
 import { useFrameworkReady } from '@/src/hooks/useFrameworkReady';
 import {
@@ -44,6 +45,36 @@ export default function RootLayout() {
     }
   }, [fontsLoaded, fontError]);
 
+  // Handle deep links
+  useEffect(() => {
+    const handleDeepLink = (url: string) => {
+      console.log('Deep link received:', url);
+      const { hostname, path, queryParams } = Linking.parse(url);
+      
+      // Handle invite links
+      if (path?.includes('/invite/')) {
+        const token = path.split('/invite/')[1];
+        if (token) {
+          router.push(`/invite/${token}?source=${queryParams?.source || 'deeplink'}`);
+        }
+      }
+    };
+
+    // Handle app launch with deep link
+    Linking.getInitialURL().then((url) => {
+      if (url) {
+        handleDeepLink(url);
+      }
+    });
+
+    // Handle deep links while app is running
+    const subscription = Linking.addEventListener('url', ({ url }) => {
+      handleDeepLink(url);
+    });
+
+    return () => subscription?.remove();
+  }, []);
+
   if (!isReady) {
     return <View />;
   }
@@ -86,6 +117,8 @@ export default function RootLayout() {
                   }}
                 />
                 <Stack.Screen name="events/join" options={{ headerShown: false }} />
+                <Stack.Screen name="events/invite-users" options={{ headerShown: false }} />
+                <Stack.Screen name="invite/[token]" options={{ headerShown: false }} />
                 <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                 <Stack.Screen name="+not-found" />
               </Stack>

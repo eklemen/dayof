@@ -6,16 +6,17 @@ export default {
     owner: 'ejklemen',
     orientation: 'portrait',
     icon: './assets/images/icon.png',
-    scheme: 'dayof',
+    scheme: 'vendorfriendr',
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
       bundleIdentifier: 'com.anonymous.dayof',
       googleServicesFile: './account-services/GoogleService-Info.plist',
+      associatedDomains: ['applinks:vendorfriendr.app'],
       infoPlist: {
         CFBundleURLTypes: [
           {
-            CFBundleURLSchemes: ['dayof'],
+            CFBundleURLSchemes: ['vendorfriendr'],
           },
           {
             // Add Facebook client ID scheme for Facebook authentication
@@ -38,11 +39,19 @@ export default {
           autoVerify: true,
           data: [
             {
-              scheme: 'dayof',
+              scheme: 'vendorfriendr',
             },
             {
               // Add Facebook client ID scheme for Facebook authentication
               scheme: `fb${process.env.EXPO_PUBLIC_FACEBOOK_APP_ID}`,
+            },
+            {
+              scheme: 'https',
+              host: 'vendorfriendr.page.link',
+            },
+            {
+              scheme: 'https',
+              host: 'vendorfriendr.app',
             },
           ],
           category: ['BROWSABLE', 'DEFAULT'],
@@ -54,6 +63,16 @@ export default {
       'expo-font',
       'expo-web-browser',
       'expo-secure-store',
+      [
+        'expo-linking',
+        {
+          scheme: 'vendorfriendr',
+          prefixes: [
+            'https://vendorfriendr.page.link',
+            'https://vendorfriendr.app'
+          ]
+        }
+      ],
       '@react-native-firebase/app',
       '@react-native-firebase/auth',
       '@react-native-firebase/crashlytics',
